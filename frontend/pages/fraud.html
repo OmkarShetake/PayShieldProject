@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayShield — Fraud Alerts</title>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .rule-tag{display:inline-block;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:4px;padding:1px 7px;font-size:10px;font-family:var(--mono);color:var(--red);margin:2px}
+    .risk-wrap{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:60px}
+    .risk-fill{height:100%;border-radius:3px}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="topbar-title">Fraud Alerts</div><div class="topbar-sub">PayShield / Fraud Detection</div></div>
+      <div class="topbar-right"><div class="live-badge"><div class="live-dot"></div>Live</div><button class="btn ghost sm" onclick="load()">↻ Refresh</button></div>
+    </div>
+    <div class="content">
+      <div class="kpi-grid-3 mb2">
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">High Risk ≥ 75</div><div class="kpi-icon red">🚨</div></div><div class="kpi-val red" id="k-hi">—</div><div class="kpi-sub">Immediate action</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Medium Risk 50–74</div><div class="kpi-icon amber">⚠</div></div><div class="kpi-val amber" id="k-med">—</div><div class="kpi-sub">Review recommended</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Avg Score</div><div class="kpi-icon purple">📊</div></div><div class="kpi-val purple" id="k-avg">—</div><div class="kpi-sub">All flagged</div></div>
+      </div>
+
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Score Distribution</div><div class="card-sub">By risk range</div></div></div>
+          <canvas id="distChart" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Top Risk Transactions</div><div class="card-sub">Highest scores</div></div></div>
+          <div id="top-list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">Flagged Transactions</div><div class="card-sub">Manual review required</div></div>
+          <span class="pill flag" id="flag-count">0 flagged</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Transaction ID</th><th>Amount</th><th>Score</th><th>Decision</th><th>Rules</th><th>Date</th></tr></thead>
+            <tbody id="fraud-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/utils.js"></script>
+<script>
+initPage('fraud');
+let chart;
+
+async function load() {
+  const d = await apiFetch('/api/fraud/alerts?size=20') || {content: mockFraud(12)};
+  const data = d.content || d;
+
+  document.getElementById('k-hi').textContent  = data.filter(a=>parseFloat(a.score)>=75).length;
+  document.getElementById('k-med').textContent = data.filter(a=>parseFloat(a.score)>=50&&parseFloat(a.score)<75).length;
+  document.getElementById('k-avg').textContent = data.length ? (data.reduce((s,a)=>s+parseFloat(a.score),0)/data.length).toFixed(1) : '—';
+  document.getElementById('flag-count').textContent = `${data.length} flagged`;
+
+  drawDist(data);
+  renderTop(data.sort((a,b)=>parseFloat(b.score)-parseFloat(a.score)).slice(0,5));
+  renderTable(data);
+}
+
+function drawDist(data) {
+  if(chart) chart.destroy();
+  const counts=[0,0,0,0,0];
+  data.forEach(a=>{const s=parseFloat(a.score);if(s<25)counts[0]++;else if(s<50)counts[1]++;else if(s<75)counts[2]++;else if(s<90)counts[3]++;else counts[4]++;});
+  chart = new Chart(document.getElementById('distChart'), {
+    type:'bar',
+    data:{labels:['0–24','25–49','50–74','75–89','90–100'], datasets:[{data:counts, backgroundColor:['#22c55e','#3b6ff0','#f59e0b','#f97316','#ef4444'], borderRadius:5}]},
+    options:{...chartDefaults, plugins:{...chartDefaults.plugins}}
+  });
+}
+
+function renderTop(top) {
+  document.getElementById('top-list').innerHTML = top.map(a=>{
+    const sc=parseFloat(a.score), col=sc>=90?'#ef4444':sc>=75?'#f97316':'#f59e0b';
+    return `<div style="padding:10px 0;border-bottom:1px solid rgba(35,38,58,.5)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span class="mono" style="font-size:12px;color:var(--text2)">${a.transactionId}</span>
+        <span class="score ${scoreClass(sc)}">${a.score}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="risk-wrap"><div class="risk-fill" style="width:${sc}%;background:${col}"></div></div>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3);width:28px">${sc.toFixed(0)}%</span>
+      </div>
+      <div style="margin-top:5px">${(a.ruleTriggers||[]).map(r=>`<span class="rule-tag">${r}</span>`).join('')}</div>
+    </div>`;}).join('');
+}
+
+function renderTable(data) {
+  document.getElementById('fraud-tbody').innerHTML = data.map(a=>`<tr>
+    <td><span class="mono" style="font-size:11px;color:var(--text2)">${a.transactionId}</span></td>
+    <td><strong>${fmt(a.amount||0)}</strong></td>
+    <td><span class="score ${scoreClass(a.score)}">${a.score}</span></td>
+    <td>${statusPill(a.decision||'FLAG')}</td>
+    <td>${(a.ruleTriggers||[]).map(r=>`<span class="rule-tag">${r}</span>`).join('')}</td>
+    <td style="color:var(--text3);font-size:12px">${fmtDate(a.createdAt)}</td>
+  </tr>`).join('');
+}
+
+load();
+</script>
+</body>
+</html>

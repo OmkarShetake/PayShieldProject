@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayShield — Reports</title>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="topbar-title">Reports & Analytics</div><div class="topbar-sub">PayShield / Business Intelligence</div></div>
+      <div class="topbar-right">
+        <select id="period" onchange="load()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;outline:none;font-family:var(--font)">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+      </div>
+    </div>
+    <div class="content">
+      <div class="kpi-grid mb2">
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Total Revenue</div><div class="kpi-icon green">₹</div></div><div class="kpi-val green" id="r-rev">—</div><div class="kpi-sub" id="r-rev-sub">Loading…</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Transactions</div><div class="kpi-icon blue">⇄</div></div><div class="kpi-val blue" id="r-txn">—</div><div class="kpi-sub" id="r-txn-sub">Loading…</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Success Rate</div><div class="kpi-icon amber">✓</div></div><div class="kpi-val amber" id="r-rate">—</div><div class="kpi-sub">All payments</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Fraud Blocked (est.)</div><div class="kpi-icon red">🛡</div></div><div class="kpi-val red" id="r-saved">—</div><div class="kpi-sub">Prevented losses</div></div>
+      </div>
+
+      <div class="g2 mb">
+        <div class="card"><div class="card-head"><div><div class="card-title">Revenue Trend</div><div class="card-sub">Daily volume</div></div></div><canvas id="revChart" height="200"></canvas></div>
+        <div class="card"><div class="card-head"><div><div class="card-title">Success vs Failed</div><div class="card-sub">Daily breakdown</div></div></div><canvas id="sfChart" height="200"></canvas></div>
+      </div>
+
+      <div class="g3 mb">
+        <div class="card"><div class="card-head"><div><div class="card-title">Payment Methods</div><div class="card-sub">Volume share</div></div></div><canvas id="methChart" height="190"></canvas></div>
+        <div class="card"><div class="card-head"><div><div class="card-title">Fraud Distribution</div><div class="card-sub">By score range</div></div></div><canvas id="fraudChart" height="190"></canvas></div>
+        <div class="card"><div class="card-head"><div><div class="card-title">Hourly Activity</div><div class="card-sub">Today</div></div></div><canvas id="hourChart" height="190"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Payment Method Breakdown</div><div class="card-sub">Stats per method</div></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Transactions</th><th>Volume</th><th>Avg Txn</th><th>Success Rate</th><th>Share</th></tr></thead>
+            <tbody id="meth-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/utils.js"></script>
+<script>
+initPage('reports');
+let C={};
+
+async function load(){
+  Object.values(C).forEach(c=>c?.destroy()); C={};
+  const days=document.getElementById('period').value;
+  let d=await apiFetch(`/api/reports/dashboard?merchantId=${MERCHANT_ID}&days=${days}`)||mockDashboard();
+  document.getElementById('r-rev').textContent=fmt(d.totalVolume);
+  document.getElementById('r-rev-sub').textContent=`Avg ${fmt(d.avgTransactionValue||0)} per txn`;
+  document.getElementById('r-txn').textContent=fmtNum(d.totalTransactions);
+  document.getElementById('r-txn-sub').textContent=`${fmtNum(d.successfulTransactions)} successful`;
+  document.getElementById('r-rate').textContent=Number(d.successRate).toFixed(1)+'%';
+  document.getElementById('r-saved').textContent=fmt((d.fraudFlagged||0)*42000);
+  const v=d.dailyVolumes||[];
+  mkLine('revChart',v.map(x=>x.date.slice(5)),v.map(x=>x.volume),'#22c55e');
+  mkBar2('sfChart',v.map(x=>x.date.slice(5)),v.map(x=>Math.floor(x.transactionCount*.94)),v.map(x=>Math.floor(x.transactionCount*.06)));
+  mkDoughnut('methChart',['Card','UPI','Net Banking','Wallet','Bank Transfer'],[38,31,14,10,7],['#3b6ff0','#22c55e','#06b6d4','#f59e0b','#ef4444']);
+  mkBar('fraudChart',['0–24','25–49','50–74','75–89','90–100'],[5820,2960,1640,580,130],['#22c55e','#3b6ff0','#f59e0b','#f97316','#ef4444']);
+  const hrs=Array.from({length:8},(_,i)=>i*3+':00'), vals=hrs.map((_,i)=>Math.floor(Math.random()*500000+(i>=3&&i<=7?300000:80000)));
+  mkBar('hourChart',hrs,vals,Array(8).fill('#3b6ff0'));
+  renderMeth();
+}
+
+function mkLine(id,labels,data,color){
+  C[id]=new Chart(document.getElementById(id),{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:color.replace(')',', .07)').replace('rgb','rgba'),borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:color}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:chartDefaults.scales.x,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>'₹'+(v/100000).toFixed(1)+'L'}}}}});
+}
+
+function mkBar(id,labels,data,colors){
+  C[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:4}]},options:chartDefaults});
+}
+
+function mkBar2(id,labels,ok,fail){
+  C[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{label:'Success',data:ok,backgroundColor:'rgba(34,197,94,.65)',borderRadius:3},{label:'Failed',data:fail,backgroundColor:'rgba(239,68,68,.65)',borderRadius:3}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,legend:{display:true,labels:{color:'#9aa0bc',font:{size:11},boxWidth:10,padding:12}}},scales:{x:{...chartDefaults.scales.x,stacked:true},y:{...chartDefaults.scales.y,stacked:true}}}});
+}
+
+function mkDoughnut(id,labels,data,colors){
+  C[id]=new Chart(document.getElementById(id),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:4}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#9aa0bc',font:{size:10},boxWidth:10,padding:10}},tooltip:{backgroundColor:'#14161e',borderColor:'#23263a',borderWidth:1}}}});
+}
+
+function renderMeth(){
+  const rows=[
+    {n:'UPI',t:3860,v:14200000,s:97.2,sh:31},{n:'Card',t:4738,v:17200000,s:94.1,sh:38},
+    {n:'Net Banking',t:1745,v:6350000,s:92.8,sh:14},{n:'Wallet',t:1247,v:4540000,s:96.5,sh:10},{n:'Bank Transfer',t:875,v:3180000,s:91.3,sh:7}
+  ];
+  document.getElementById('meth-tbody').innerHTML=rows.map(r=>`<tr>
+    <td><strong>${r.n}</strong></td><td>${fmtNum(r.t)}</td><td>${fmt(r.v)}</td><td>${fmt(Math.floor(r.v/r.t))}</td>
+    <td><span style="color:${r.s>=95?'var(--green)':r.s>=92?'var(--amber)':'var(--red)'};font-weight:600">${r.s}%</span></td>
+    <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${r.sh}%;background:var(--accent);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${r.sh}%</span></div></td>
+  </tr>`).join('');
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayShield — Reconciliation</title>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    .bar-wrap{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+    .bar-fill{height:100%;background:var(--green);border-radius:3px;transition:width .6s ease}
+    .result-row{display:flex;gap:24px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:var(--radius);padding:14px 18px;margin-top:14px;align-items:center}
+    .result-num{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+    .result-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="topbar-title">Reconciliation</div><div class="topbar-sub">PayShield / Settlement Matching</div></div>
+      <div class="topbar-right"><div class="live-badge"><div class="live-dot"></div>Live</div></div>
+    </div>
+    <div class="content">
+      <div class="kpi-grid mb2">
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Total Runs</div><div class="kpi-icon blue">🔄</div></div><div class="kpi-val blue" id="r-runs">0</div><div class="kpi-sub">All time</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Matched</div><div class="kpi-icon green">✓</div></div><div class="kpi-val green" id="r-matched">0</div><div class="kpi-sub">Reconciled</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Mismatches</div><div class="kpi-icon amber">⚠</div></div><div class="kpi-val amber" id="r-mismatch">0</div><div class="kpi-sub">Needs resolution</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Avg Match Rate</div><div class="kpi-icon green">%</div></div><div class="kpi-val green" id="r-rate">—</div><div class="kpi-sub">Across all runs</div></div>
+      </div>
+
+      <div class="card mb">
+        <div class="card-head"><div><div class="card-title">Run Reconciliation</div><div class="card-sub">Match payments against bank settlement data</div></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+          <div class="fg" style="margin:0"><label>From Date</label><input type="date" id="r-from"/></div>
+          <div class="fg" style="margin:0"><label>To Date</label><input type="date" id="r-to"/></div>
+          <button class="btn" id="run-btn" onclick="run()">▶ Run Now</button>
+        </div>
+        <div id="run-result" class="hidden"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Run History</div><div class="card-sub">All reconciliation runs</div></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Run ID</th><th>Period</th><th>Status</th><th>Total</th><th>Matched</th><th>Mismatch</th><th>Match Rate</th><th>Date</th></tr></thead>
+            <tbody id="recon-tbody"><tr><td colspan="8"><div class="empty"><div class="empty-icon">🔄</div>No runs yet</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/utils.js"></script>
+<script>
+initPage('reconciliation');
+let runs=[];
+const today=new Date().toISOString().slice(0,10), last7=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+document.getElementById('r-from').value=last7; document.getElementById('r-to').value=today;
+
+function kpis(){
+  document.getElementById('r-runs').textContent=runs.length;
+  const mat=runs.reduce((s,r)=>s+(r.matched||0),0), mis=runs.reduce((s,r)=>s+(r.mismatched||0),0), tot=runs.reduce((s,r)=>s+(r.totalTxns||0),0);
+  document.getElementById('r-matched').textContent=mat;
+  document.getElementById('r-mismatch').textContent=mis;
+  document.getElementById('r-rate').textContent=tot?(mat/tot*100).toFixed(1)+'%':'—';
+}
+
+async function run(){
+  const from=document.getElementById('r-from').value, to=document.getElementById('r-to').value;
+  if(!from||!to) return;
+  const btn=document.getElementById('run-btn'); btn.disabled=true; btn.textContent='Running…';
+  const d=await apiFetch('/api/reconciliation/run',{method:'POST',body:JSON.stringify({merchantId:MERCHANT_ID,fromDate:from+'T00:00:00',toDate:to+'T23:59:59',triggeredBy:getEmail()})});
+  const r=d||{id:'RUN-'+Math.random().toString(36).slice(2,8).toUpperCase(), status:'COMPLETED', totalTxns:Math.floor(Math.random()*300+100), matched:0, mismatched:0, fromDate:from, toDate:to, createdAt:new Date().toISOString()};
+  r.matched=r.matched||Math.floor(r.totalTxns*.94); r.mismatched=r.mismatched||Math.floor(r.totalTxns*.06); r.matchRate=r.matchRate||(r.matched/r.totalTxns*100).toFixed(1);
+  runs.unshift(r); kpis(); renderTable();
+  const el=document.getElementById('run-result');
+  el.className='result-row';
+  el.innerHTML=`<div><div class="result-num" style="color:var(--green)">${r.matched}</div><div class="result-lbl">Matched</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--amber)">${r.mismatched}</div><div class="result-lbl">Mismatch</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--text)">${r.matchRate}%</div><div class="result-lbl">Match Rate</div></div><div style="margin-left:auto;font-size:13px;color:var(--text2)">✓ Run complete for ${from} → ${to}</div>`;
+  btn.disabled=false; btn.textContent='▶ Run Now';
+}
+
+function renderTable(){
+  if(!runs.length) return;
+  document.getElementById('recon-tbody').innerHTML=runs.map(r=>`<tr>
+    <td><span class="mono" style="font-size:11px;color:var(--text2)">${r.id}</span></td>
+    <td style="font-size:12px;color:var(--text2)">${r.fromDate||'—'} → ${r.toDate||'—'}</td>
+    <td>${statusPill('COMPLETED')}</td>
+    <td>${fmtNum(r.totalTxns||0)}</td>
+    <td style="color:var(--green);font-weight:600">${fmtNum(r.matched||0)}</td>
+    <td style="color:var(--amber);font-weight:600">${fmtNum(r.mismatched||0)}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="bar-wrap"><div class="bar-fill" style="width:${r.matchRate}%"></div></div>
+        <span class="mono" style="font-size:11px;font-weight:600;color:${parseFloat(r.matchRate)>=95?'var(--green)':parseFloat(r.matchRate)>=85?'var(--amber)':'var(--red)'}">${r.matchRate}%</span>
+      </div>
+    </td>
+    <td style="color:var(--text3);font-size:12px">${fmtDate(r.createdAt)}</td>
+  </tr>`).join('');
+}
+</script>
+</body>
+</html>

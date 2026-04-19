@@ -1,0 +1,331 @@
+GITHUB PROJECT UPLOAD AND UPDATE PROCESS (FULL WORKING GUIDE)
+
+Project: PayShield — Intelligent Payment Protection Platform
+
+========================================
+  PART 1 — FIRST TIME UPLOAD TO GITHUB
+========================================
+
+Step 1 — Create Repository on GitHub
+1. Open https://github.com
+2. Click "New Repository"
+3. Enter repository name: payshield
+4. Select Public (or Private)
+5. DO NOT check "Add README" or "Add .gitignore" (we do it manually)
+6. Click "Create Repository"
+7. Copy the repository URL
+
+Example: https://github.com/your-username/payshield.git
+
+------------------------------------------------------------------------
+
+Step 2 — Open Project Folder in Terminal
+
+Open terminal inside your project folder:
+
+cd C:\Users\Omkar Shetake\Desktop\PayShield\payshield-platform
+
+------------------------------------------------------------------------
+
+Step 3 — Initialize Git
+
+git init
+
+------------------------------------------------------------------------
+
+Step 4 — Create .gitignore File
+
+Create a file named .gitignore in the root of payshield-platform and add:
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+
+# Node / Frontend
+node_modules/
+
+# Docker volumes / data
+postgres_data/
+
+# Environment secrets
+.env
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+Then run:
+
+git add .gitignore
+git commit -m "Added .gitignore"
+
+------------------------------------------------------------------------
+
+Step 5 — Add All Files
+
+git add .
+
+------------------------------------------------------------------------
+
+Step 6 — Commit Files
+
+git commit -m "Initial commit - PayShield Intelligent Payment Protection Platform"
+
+------------------------------------------------------------------------
+
+Step 7 — Connect GitHub Repository
+
+git remote add origin https://github.com/your-username/payshield.git
+
+------------------------------------------------------------------------
+
+Step 8 — Push Project to GitHub
+
+git branch -M main
+git push -u origin main
+
+Your project is now on GitHub.
+
+========================================
+  PART 2 — AFTER CHANGING OR ADDING CODE
+========================================
+
+Whenever you:
+- Fix a bug
+- Add a new feature
+- Update frontend pages
+- Change configuration files
+- Add new microservice
+
+Use these commands:
+
+Step 1 — Add Changes
+
+git add .
+
+------------------------------------------------------------------------
+
+Step 2 — Commit Changes
+
+git commit -m "Describe what you changed"
+
+Examples for PayShield:
+
+git commit -m "Fixed UserDetailsService missing in auth service"
+git commit -m "Added FraudCheckResponseConsumer to payment service"
+git commit -m "Updated frontend overview dashboard"
+git commit -m "Fixed docker-compose zookeeper healthcheck"
+git commit -m "Added PaymentMethodStats BIGINT fix in reporting SQL"
+git commit -m "Updated nginx.conf for WebSocket support"
+
+------------------------------------------------------------------------
+
+Step 3 — Push Changes
+
+git push
+
+Your updated code will appear on GitHub.
+
+========================================
+  PART 3 — CHECK STATUS (VERY USEFUL)
+========================================
+
+To see which files changed:
+
+git status
+
+To see what exactly changed inside files:
+
+git diff
+
+Shows:
+- Modified files (orange/red)
+- New files (green)
+- Deleted files (red)
+
+========================================
+  PART 4 — PAYSHIELD PROJECT STRUCTURE
+========================================
+
+Make sure all these folders are pushed to GitHub:
+
+payshield-platform/
+├── payshield-auth/              ← Auth microservice
+├── payshield-payment/           ← Payment microservice
+├── payshield-fraud/             ← Fraud detection microservice
+├── payshield-reconciliation/    ← Reconciliation microservice
+├── payshield-notification/      ← Notification microservice
+├── payshield-reporting/         ← Reporting microservice
+├── payshield-gateway/           ← API Gateway
+├── payshield-ai-scorer/         ← Python AI fraud model
+├── frontend/                    ← HTML/CSS/JS frontend
+├── scripts/                     ← Database init SQL scripts
+├── docker-compose.yml           ← Full Docker setup
+├── nginx.conf                   ← Nginx config
+├── payshield-docker-commands.txt ← Docker commands reference
+└── README.md                    ← Project documentation
+
+------------------------------------------------------------------------
+
+Verify all folders are added:
+
+git status
+
+If any folder is missing run:
+
+git add payshield-auth/
+git add payshield-payment/
+git add payshield-fraud/
+git add payshield-reconciliation/
+git add payshield-notification/
+git add payshield-reporting/
+git add payshield-gateway/
+git add payshield-ai-scorer/
+git add frontend/
+git add scripts/
+git add docker-compose.yml
+git add nginx.conf
+git add README.md
+
+========================================
+  PART 5 — ADD README FILE
+========================================
+
+Create README.md in root folder with this content:
+
+# 🛡️ PayShield — Intelligent Payment Protection Platform
+
+A microservices-based payment processing and fraud detection platform
+built with Java 21, Spring Boot 3, Apache Kafka, Redis, and PostgreSQL.
+
+## Tech Stack
+- Java 21 + Spring Boot 3
+- Apache Kafka (event streaming)
+- PostgreSQL 15 (per-service databases)
+- Redis 7 (caching + fraud velocity)
+- Python FastAPI + XGBoost (AI fraud scoring)
+- Docker + nginx
+
+## Services
+- payshield-auth         (port 8081)
+- payshield-payment      (port 8082)
+- payshield-fraud        (port 8083)
+- payshield-reconciliation (port 8084)
+- payshield-notification (port 8085)
+- payshield-reporting    (port 8086)
+- payshield-gateway      (port 8080)
+- payshield-ai-scorer    (port 9000)
+- frontend               (port 3000)
+
+## Run
+docker-compose up -d --build
+Open http://localhost:3000
+
+Then run:
+
+git add README.md
+git commit -m "Added README"
+git push
+
+========================================
+  PART 6 — DAILY WORKFLOW (MOST IMPORTANT)
+========================================
+
+Every time you change the PayShield project:
+
+git add .
+git commit -m "your message here"
+git push
+
+That's it. Repeat every time you update.
+
+========================================
+  PART 7 — COMMON ERRORS AND FIXES
+========================================
+
+Error: git not recognized
+Solution: Install Git from https://git-scm.com
+Then restart terminal.
+
+------------------------------------------------------------------------
+
+Error: remote origin already exists
+Solution:
+git remote remove origin
+git remote add origin https://github.com/your-username/payshield.git
+
+------------------------------------------------------------------------
+
+Error: push rejected
+Solution:
+git pull origin main
+git push
+
+------------------------------------------------------------------------
+
+Error: large files rejected
+Solution: Add to .gitignore and run:
+git rm -r --cached target/
+git add .
+git commit -m "Removed target folders"
+git push
+
+------------------------------------------------------------------------
+
+Error: permission denied / authentication failed
+Solution: Use GitHub Personal Access Token
+1. Go to GitHub → Settings → Developer Settings
+2. Personal Access Tokens → Generate New Token
+3. Copy the token
+4. When prompted for password → paste the token
+
+------------------------------------------------------------------------
+
+Error: nothing to commit
+Solution: You have no changes. Check with:
+git status
+
+========================================
+  PART 8 — USEFUL EXTRA COMMANDS
+========================================
+
+See full commit history:
+git log --oneline
+
+Undo last commit (keep files):
+git reset --soft HEAD~1
+
+See which remote is connected:
+git remote -v
+
+Pull latest code from GitHub:
+git pull origin main
+
+Create a new branch:
+git checkout -b feature/new-feature
+
+Switch back to main:
+git checkout main
+
+========================================
+  END OF GUIDE
+========================================

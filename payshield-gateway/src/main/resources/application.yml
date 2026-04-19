@@ -1,0 +1,83 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: payshield-gateway
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      routes:
+
+        # Auth Service — no JWT filter (login/register are public)
+        - id: payshield-auth
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+
+        # Payment Service — JWT required
+        - id: payshield-payment
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - JwtAuthFilter
+
+        # Fraud Detection Service — JWT required
+        - id: fraud-service
+          uri: ${FRAUD_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/fraud/**
+          filters:
+            - JwtAuthFilter
+
+        # Reconciliation Service — JWT required
+        - id: recon-service
+          uri: ${RECON_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/reconciliation/**
+          filters:
+            - JwtAuthFilter
+
+        # Notification Service — JWT required
+        - id: payshield-notification
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - JwtAuthFilter
+
+        # Reporting Service — JWT required
+        - id: payshield-reporting
+          uri: ${REPORTING_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/reports/**
+          filters:
+            - JwtAuthFilter
+
+jwt:
+  secret: ${JWT_SECRET:payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.payshield: DEBUG

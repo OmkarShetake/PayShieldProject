@@ -1,0 +1,113 @@
+# ============================================
+#   PAYSHIELD — DOCKER COMMANDS REFERENCE
+# ============================================
+
+
+# ── START ────────────────────────────────────
+
+# Start everything (first time — builds images)
+docker-compose up -d --build
+
+# Start everything (after first time)
+docker-compose up -d
+
+# Start only infrastructure (for IntelliJ mode)
+docker-compose up -d postgres redis zookeeper kafka
+
+
+# ── STOP ─────────────────────────────────────
+
+# Stop all containers
+docker-compose down
+
+# Stop and delete all data (fresh start)
+docker-compose down -v
+
+
+# ── RESTART ───────────────────────────────────
+
+# Restart everything
+docker-compose restart
+
+# Restart one service
+docker-compose restart payshield-auth
+docker-compose restart payshield-payment
+docker-compose restart payshield-fraud
+
+
+# ── STATUS & HEALTH ───────────────────────────
+
+# See all running containers
+docker ps
+
+# See only payshield containers
+docker ps --filter "name=payshield"
+
+# Check all container status
+docker-compose ps
+
+
+# ── LOGS ──────────────────────────────────────
+
+# Logs of all services
+docker-compose logs
+
+# Live logs of one service
+docker-compose logs -f payshield-auth
+docker-compose logs -f payshield-payment
+docker-compose logs -f payshield-fraud
+docker-compose logs -f payshield-kafka
+docker-compose logs -f payshield-postgres
+
+
+# ── DATABASE ──────────────────────────────────
+
+# Create all databases (run once after postgres starts)
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE auth_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE payment_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE fraud_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE recon_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE notification_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE reporting_db;"
+
+# Connect to a database
+docker exec -it payshield-postgres psql -U postgres -d payment_db
+
+# List all databases
+docker exec -it payshield-postgres psql -U postgres -c "\l"
+
+# Drop and recreate one database (reset)
+docker exec -it payshield-postgres psql -U postgres -c "DROP DATABASE reporting_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE reporting_db;"
+
+
+# ── CLEANUP ───────────────────────────────────
+
+# Remove stopped containers
+docker container prune -f
+
+# Remove unused images
+docker image prune -f
+
+# Full cleanup (containers + images + volumes)
+docker system prune -a -f
+
+
+# ── FIRST TIME SETUP (run in this order) ──────
+
+# Step 1 — Start infrastructure
+docker-compose up -d postgres redis zookeeper kafka
+
+# Step 2 — Wait 30 seconds then create all databases
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE auth_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE payment_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE fraud_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE recon_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE notification_db;"
+docker exec -it payshield-postgres psql -U postgres -c "CREATE DATABASE reporting_db;"
+
+# Step 3 — Start all services
+docker-compose up -d
+
+# Step 4 — Open in browser
+# http://localhost:3000

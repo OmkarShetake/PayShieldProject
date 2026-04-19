@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayShield — Overview</title>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Overview</div>
+        <div class="topbar-sub">PayShield / Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <div class="env-tag">DEV</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="kpi-grid mb2">
+        <div class="kpi">
+          <div class="kpi-top"><div class="kpi-label">Total Volume (30d)</div><div class="kpi-icon green">₹</div></div>
+          <div class="kpi-val green" id="v-vol">—</div>
+          <div class="kpi-sub" id="v-vol-sub">Loading…</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div class="kpi-label">Transactions</div><div class="kpi-icon blue">⇄</div></div>
+          <div class="kpi-val blue" id="v-txn">—</div>
+          <div class="kpi-sub" id="v-txn-sub">Loading…</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div class="kpi-label">Success Rate</div><div class="kpi-icon amber">✓</div></div>
+          <div class="kpi-val amber" id="v-rate">—</div>
+          <div class="kpi-sub">Last 30 days</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div class="kpi-label">Fraud Flagged</div><div class="kpi-icon red">⚠</div></div>
+          <div class="kpi-val red" id="v-fraud">—</div>
+          <div class="kpi-sub">Requires review</div>
+        </div>
+      </div>
+
+      <div class="g31 mb">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Daily Volume</div><div class="card-sub">Last 14 days (INR)</div></div>
+          </div>
+          <canvas id="volChart" height="175"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Payment Methods</div><div class="card-sub">Distribution</div></div>
+          </div>
+          <canvas id="methChart" height="175"></canvas>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Recent Fraud Alerts</div><div class="card-sub">Flagged transactions</div></div>
+            <a href="fraud.html" class="btn ghost sm">View all</a>
+          </div>
+          <div id="alerts-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Service Health</div><div class="card-sub">Microservices status</div></div>
+          </div>
+          <div id="health-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/utils.js"></script>
+<script>
+initPage('overview');
+let C = {};
+
+async function load() {
+  let d = await apiFetch(`/api/reports/dashboard?merchantId=${MERCHANT_ID}&days=30`) || mockDashboard();
+  document.getElementById('v-vol').textContent = fmt(d.totalVolume);
+  document.getElementById('v-vol-sub').textContent = `Avg ${fmt(d.avgTransactionValue||0)} per txn`;
+  document.getElementById('v-txn').textContent = fmtNum(d.totalTransactions);
+  document.getElementById('v-txn-sub').textContent = `${fmtNum(d.successfulTransactions)} ok · ${fmtNum(d.failedTransactions)} failed`;
+  document.getElementById('v-rate').textContent = Number(d.successRate).toFixed(1)+'%';
+  document.getElementById('v-fraud').textContent = fmtNum(d.fraudFlagged||0);
+  drawVol(d.dailyVolumes||[]); drawMeth(); renderAlerts(); renderHealth();
+}
+
+function drawVol(v) {
+  if(C.vol) C.vol.destroy();
+  C.vol = new Chart(document.getElementById('volChart'), {
+    type:'line',
+    data:{ labels:v.map(x=>x.date.slice(5)), datasets:[{ data:v.map(x=>x.volume), borderColor:'#3b6ff0', backgroundColor:'rgba(59,111,240,.06)', borderWidth:2, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#3b6ff0' }]},
+    options:{...chartDefaults, plugins:{...chartDefaults.plugins, tooltip:{...chartDefaults.plugins.tooltip, callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{ x:{...chartDefaults.scales.x}, y:{...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>'₹'+(v/100000).toFixed(1)+'L'}} }}
+  });
+}
+
+function drawMeth() {
+  if(C.meth) C.meth.destroy();
+  C.meth = new Chart(document.getElementById('methChart'), {
+    type:'doughnut',
+    data:{ labels:['Card','UPI','Net Banking','Wallet','Bank Transfer'], datasets:[{ data:[38,31,14,10,7], backgroundColor:['#3b6ff0','#22c55e','#06b6d4','#f59e0b','#ef4444'], borderWidth:0, hoverOffset:4 }]},
+    options:{responsive:true, cutout:'65%', plugins:{legend:{position:'bottom', labels:{color:'#9aa0bc',font:{size:11},boxWidth:10,padding:12}}, tooltip:{backgroundColor:'#14161e',borderColor:'#23263a',borderWidth:1}}}
+  });
+}
+
+function renderAlerts() {
+  const a = mockFraud(5);
+  document.getElementById('alerts-list').innerHTML = a.map(x=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(35,38,58,.5)">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${parseFloat(x.score)>=85?'🚨':'⚠️'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text2)">${x.transactionId}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px">${x.ruleTriggers.join(' · ')}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="score ${scoreClass(x.score)}">${x.score}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${x.decision}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderHealth() {
+  const svcs = [
+    {n:'payshield-auth',          p:8081, ok:true},
+    {n:'payshield-payment',       p:8082, ok:true},
+    {n:'payshield-fraud',         p:8083, ok:true},
+    {n:'payshield-reconciliation',p:8084, ok:true},
+    {n:'payshield-notification',  p:8085, ok:true},
+    {n:'payshield-reporting',     p:8086, ok:true},
+  ];
+  document.getElementById('health-list').innerHTML = svcs.map(s=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(35,38,58,.5)">
+      <div>
+        <div style="font-size:12px;font-weight:500">${s.n}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">:${s.p}</div>
+      </div>
+      <span class="pill ${s.ok?'ok':'fail'}"><span class="pill-dot"></span>${s.ok?'UP':'DOWN'}</span>
+    </div>`).join('');
+}
+
+load();
+</script>
+</body>
+</html>

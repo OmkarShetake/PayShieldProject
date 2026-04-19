@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayShield — Notifications</title>
+  <link rel="stylesheet" href="../css/global.css"/>
+  <style>
+    .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:7px;padding:3px;margin-bottom:16px;border:1px solid var(--border);width:fit-content}
+    .tab{padding:6px 16px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text3);transition:all .12s}
+    .tab.active{background:var(--surface);color:var(--text)}
+    .notif-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid rgba(35,38,58,.5);cursor:pointer}
+    .notif-item:last-child{border-bottom:none}
+    .notif-item:hover{opacity:.85}
+    .n-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .n-icon.ok{background:rgba(34,197,94,.1)} .n-icon.err{background:rgba(239,68,68,.1)} .n-icon.warn{background:rgba(245,158,11,.1)} .n-icon.info{background:rgba(59,111,240,.1)}
+    .n-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="topbar-title">Notifications</div><div class="topbar-sub">PayShield / Alerts & Events</div></div>
+      <div class="topbar-right">
+        <button class="btn ghost sm" onclick="markAll()">✓ Mark all read</button>
+        <button class="btn ghost sm" onclick="load()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="kpi-grid-3 mb2">
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Total Today</div><div class="kpi-icon blue">🔔</div></div><div class="kpi-val blue" id="n-tot">—</div><div class="kpi-sub">All notifications</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Unread</div><div class="kpi-icon red">📬</div></div><div class="kpi-val red" id="n-unread">—</div><div class="kpi-sub">Pending review</div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-label">Fraud Alerts</div><div class="kpi-icon amber">⚠</div></div><div class="kpi-val amber" id="n-fraud">—</div><div class="kpi-sub">High priority</div></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="setTab('all',this)">All</div>
+        <div class="tab" onclick="setTab('fraud',this)">Fraud</div>
+        <div class="tab" onclick="setTab('payment',this)">Payments</div>
+        <div class="tab" onclick="setTab('system',this)">System</div>
+      </div>
+
+      <div class="card"><div id="notif-list"><div class="empty"><div class="empty-icon">🔔</div>Loading…</div></div></div>
+    </div>
+  </main>
+</div>
+<script src="../js/utils.js"></script>
+<script>
+initPage('notifications');
+let all=[], tab='all';
+
+function mockNotifs(){
+  const t=[
+    {icon:'🚨',type:'fraud',cls:'err',title:'High Fraud Score Detected',msg:'Transaction TXNABC123 scored 94.2 — auto-rejected. Rules: HIGH_AMOUNT, VELOCITY_COUNT'},
+    {icon:'✅',type:'payment',cls:'ok',title:'Payment Completed',msg:'₹12,500 from user@example.com processed via UPI successfully'},
+    {icon:'❌',type:'payment',cls:'err',title:'Payment Failed',msg:'₹8,200 failed — insufficient funds. Customer notified via email'},
+    {icon:'⚠️',type:'fraud',cls:'warn',title:'Velocity Check Triggered',msg:'5 transactions in 10 min from same IP. Manual review recommended'},
+    {icon:'🔄',type:'system',cls:'info',title:'Reconciliation Completed',msg:'Daily run finished. 847/850 matched (99.6% match rate)'},
+    {icon:'📧',type:'system',cls:'info',title:'Email Sent',msg:'Payment receipt delivered to customer@example.com for order #45892'},
+    {icon:'🛡',type:'fraud',cls:'warn',title:'New Device Detected',msg:'Unrecognized device for user2@example.com. Score: 72.4'},
+    {icon:'💰',type:'payment',cls:'ok',title:'Large Payment Processed',msg:'₹95,000 from merchant@corp.com completed via Net Banking'},
+  ];
+  return Array.from({length:20},(_,i)=>{const x=t[i%t.length];return{id:i+1,...x,read:i>5,createdAt:new Date(Date.now()-i*3200000).toISOString()};});
+}
+
+function load(){
+  all=mockNotifs();
+  document.getElementById('n-tot').textContent=all.length;
+  document.getElementById('n-unread').textContent=all.filter(n=>!n.read).length;
+  document.getElementById('n-fraud').textContent=all.filter(n=>n.type==='fraud').length;
+  render();
+}
+
+function setTab(t,el){tab=t;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');render();}
+
+function markAll(){all.forEach(n=>n.read=true);document.getElementById('n-unread').textContent='0';render();}
+
+function render(){
+  const data=tab==='all'?all:all.filter(n=>n.type===tab);
+  if(!data.length){document.getElementById('notif-list').innerHTML=`<div class="empty"><div class="empty-icon">🔔</div>No notifications here</div>`;return;}
+  document.getElementById('notif-list').innerHTML=data.map(n=>`
+    <div class="notif-item" onclick="read(${n.id})">
+      <div class="n-icon ${n.cls}">${n.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px">${n.title}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5">${n.msg}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">${fmtDate(n.createdAt)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span class="pill ${n.type==='fraud'?'flag':n.cls==='ok'?'ok':n.cls==='err'?'fail':'warn'}" style="font-size:10px">${n.type.toUpperCase()}</span>
+        ${!n.read?'<div class="n-dot"></div>':''}
+      </div>
+    </div>`).join('');
+}
+
+function read(id){const n=all.find(x=>x.id===id);if(n&&!n.read){n.read=true;document.getElementById('n-unread').textContent=all.filter(x=>!x.read).length;render();}}
+load();
+</script>
+</body>
+</html>
