@@ -1,0 +1,36 @@
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+
+# Node / Frontend
+node_modules/
+
+# Docker volumes / data
+postgres_data/
+
+# Environment secrets
+.env
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
