@@ -61,4 +61,25 @@ management:
 
 logging:
   level:
-    com.payshield: DEBUG
+    com.payshield:                   DEBUG
+    org.springframework.web:         INFO
+    org.springframework.security:    WARN
+    org.springframework.kafka:       WARN
+    org.hibernate.SQL:               WARN
+    org.flywaydb:                    INFO
+    com.zaxxer.hikari:               WARN
+
+springdoc:
+  api-docs:
+    path: /api/fraud-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  info:
+    title: "PayShield Fraud Detection API"
+    description: "AI-powered fraud scoring — score transactions, view alerts"
+    version: "v1.0"

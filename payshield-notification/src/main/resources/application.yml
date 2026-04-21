@@ -54,4 +54,10 @@ management:
 
 logging:
   level:
-    com.payshield: DEBUG
+    com.payshield:                   DEBUG
+    org.springframework.web:         INFO
+    org.springframework.security:    WARN
+    org.springframework.kafka:       WARN
+    org.hibernate.SQL:               WARN
+    org.flywaydb:                    INFO
+    com.zaxxer.hikari:               WARN

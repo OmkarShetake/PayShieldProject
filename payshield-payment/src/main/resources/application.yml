@@ -71,4 +71,25 @@ management:
 
 logging:
   level:
-    com.payshield: DEBUG
+    com.payshield:                   DEBUG
+    org.springframework.web:         INFO
+    org.springframework.security:    WARN
+    org.springframework.kafka:       WARN
+    org.hibernate.SQL:               WARN
+    org.flywaydb:                    INFO
+    com.zaxxer.hikari:               WARN
+
+springdoc:
+  api-docs:
+    path: /api/payment-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  info:
+    title: "PayShield Payment API"
+    description: "Payment processing — initiate, process, and track transactions"
+    version: "v1.0"

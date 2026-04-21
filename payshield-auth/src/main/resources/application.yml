@@ -44,5 +44,25 @@ management:
 
 logging:
   level:
-    com.payshield: DEBUG
-    org.springframework.security: INFO
+    com.payshield:                   DEBUG
+    org.springframework.web:         INFO
+    org.springframework.security:    WARN
+    org.springframework.kafka:       WARN
+    org.hibernate.SQL:               WARN
+    org.flywaydb:                    INFO
+    com.zaxxer.hikari:               WARN
+
+springdoc:
+  api-docs:
+    path: /api/auth-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  info:
+    title: "PayShield Auth API"
+    description: "Authentication service — register, login, refresh tokens"
+    version: "v1.0"
