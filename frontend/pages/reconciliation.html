@@ -110,8 +110,12 @@ function clearHistory() {
   toast('Run history cleared', 'info', 2000);
 }
 
-  if(!runs.length) return;
-  document.getElementById('recon-tbody').innerHTML=runs.map(r=>`<tr>
+function renderTable() {
+  if (!runs.length) {
+    document.getElementById('recon-tbody').innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔄</div>No runs yet</div></td></tr>`;
+    return;
+  }
+  document.getElementById('recon-tbody').innerHTML = runs.map(r => `<tr>
     <td><span class="mono" style="font-size:11px;color:var(--text2)">${r.id}</span></td>
     <td style="font-size:12px;color:var(--text2)">${r.fromDate||'—'} → ${r.toDate||'—'}</td>
     <td>${statusPill('COMPLETED')}</td>

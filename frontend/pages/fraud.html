@@ -97,7 +97,6 @@ async function load() {
   const isMock = !raw;
   const data = (raw && (raw.content || raw)) || mockFraud(12);
   if (isMock) showMockBanner('content-wrap'); else hideMockBanner('content-wrap');
-
   const hi  = data.filter(a => parseFloat(a.score) >= 75).length;
   const med = data.filter(a => parseFloat(a.score) >= 50 && parseFloat(a.score) < 75).length;
   const avg = data.length ? (data.reduce((s, a) => s + parseFloat(a.score), 0) / data.length).toFixed(1) : '—';

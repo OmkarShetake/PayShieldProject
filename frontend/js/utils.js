@@ -36,8 +36,11 @@ async function apiFetch(path, opts = {}) {
     });
 
     if (res.status === 401) {
-      clearAuth();
-      window.location.href = '../index.html';
+      // Don't redirect if running in demo mode
+      if (getToken() !== 'demo-mode') {
+        clearAuth();
+        window.location.href = '../index.html';
+      }
       return null;
     }
 

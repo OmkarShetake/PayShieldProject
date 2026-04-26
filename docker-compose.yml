@@ -265,15 +265,12 @@ services:
       REPORTING_SERVICE_URL: http://payshield-report-svc:8086
       JWT_SECRET: ${JWT_SECRET:-payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
-      SPRING_DATA_REDIS_HOST: redis
     depends_on:
       payshield-auth:
         condition: service_healthy
       payshield-payment:
         condition: service_healthy
       payshield-fraud:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: on-failure
     healthcheck:

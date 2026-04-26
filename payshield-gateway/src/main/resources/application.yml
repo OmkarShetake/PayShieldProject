@@ -32,11 +32,6 @@ spring:
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/auth/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter: "#{@authRateLimiter}"
-                key-resolver: "#{@ipKeyResolver}"
 
         # Payment Service — JWT required
         - id: payshield-payment
@@ -80,12 +75,6 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
-
-spring:
-  data:
-    redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: 6379
 
 management:
   endpoints:

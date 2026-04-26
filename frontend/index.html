@@ -163,12 +163,32 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      saveAuth(data.accessToken, data.user?.email || email, data.user?.merchantId || data.user?.id || '');
-      window.location.href = 'pages/overview.html';
-    } catch {
-      showErr('Wrong email or password');
+
+      if (res.ok) {
+        const data = await res.json();
+        saveAuth(data.accessToken, data.user?.email || email, data.user?.merchantId || data.user?.id || '');
+        window.location.href = 'pages/overview.html';
+        return;
+      }
+
+      // 401 = wrong credentials
+      if (res.status === 401) {
+        showErr('Wrong email or password');
+        return;
+      }
+
+      throw new Error('server_error');
+
+    } catch (e) {
+      // Backend unreachable — allow demo credentials to bypass for portfolio demo
+      if (email === 'admin@payshield.com' && pass === 'Admin@123') {
+        saveAuth('demo-mode', email, 'demo-merchant');
+        window.location.href = 'pages/overview.html';
+        return;
+      }
+      showErr(e.message === 'server_error'
+        ? 'Server error — try again'
+        : 'Cannot reach server — start the backend or use demo credentials');
     }
   }
 

@@ -1,50 +1,79 @@
 package com.payshield.apigateway.config;
 
-import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
-import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
- * Redis-backed rate limiting for the API Gateway.
+ * In-memory sliding-window rate limiter (no Redis required).
  *
- * Limits:
- *  - Auth endpoints (login/register): 20 req/s — brute-force protection
- *  - All other endpoints: 100 req/s per IP
+ * Limits per client IP:
+ *  - /api/auth/**  → 20 requests per minute  (brute-force protection)
+ *  - all others    → 200 requests per minute
  *
- * Uses token bucket algorithm via Redis.
- * Key is resolved from X-Forwarded-For or remote address.
+ * Uses a simple token-bucket approach with per-IP counters reset every minute.
  */
-@Configuration
-public class RateLimiterConfig {
+@Component
+@Slf4j
+public class RateLimiterConfig implements GlobalFilter, Ordered {
 
-    /** Rate limiter for auth endpoints — stricter to prevent brute force */
-    @Bean
-    public RedisRateLimiter authRateLimiter() {
-        // replenishRate=20 (tokens/sec), burstCapacity=30, requestedTokens=1
-        return new RedisRateLimiter(20, 30, 1);
+    private static final int AUTH_LIMIT    = 20;
+    private static final int DEFAULT_LIMIT = 200;
+    private static final long WINDOW_MS    = 60_000L; // 1 minute
+
+    private record Counter(AtomicInteger count, AtomicLong windowStart) {}
+
+    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String ip = getClientIp(exchange);
+        String path = exchange.getRequest().getPath().value();
+        int limit = path.startsWith("/api/auth") ? AUTH_LIMIT : DEFAULT_LIMIT;
+
+        String key = ip + ":" + (path.startsWith("/api/auth") ? "auth" : "api");
+        Counter counter = counters.computeIfAbsent(key,
+                k -> new Counter(new AtomicInteger(0), new AtomicLong(System.currentTimeMillis())));
+
+        long now = System.currentTimeMillis();
+        // Reset window if expired
+        if (now - counter.windowStart().get() > WINDOW_MS) {
+            counter.windowStart().set(now);
+            counter.count().set(0);
+        }
+
+        int current = counter.count().incrementAndGet();
+        if (current > limit) {
+            log.warn("Rate limit exceeded for IP={} path={} count={}/{}", ip, path, current, limit);
+            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+            exchange.getResponse().getHeaders().add("X-RateLimit-Limit", String.valueOf(limit));
+            exchange.getResponse().getHeaders().add("X-RateLimit-Remaining", "0");
+            exchange.getResponse().getHeaders().add("Retry-After", "60");
+            return exchange.getResponse().setComplete();
+        }
+
+        exchange.getResponse().getHeaders().add("X-RateLimit-Limit", String.valueOf(limit));
+        exchange.getResponse().getHeaders().add("X-RateLimit-Remaining", String.valueOf(limit - current));
+        return chain.filter(exchange);
     }
 
-    /** Rate limiter for general API endpoints */
-    @Bean
-    public RedisRateLimiter apiRateLimiter() {
-        // replenishRate=100 (tokens/sec), burstCapacity=150, requestedTokens=1
-        return new RedisRateLimiter(100, 150, 1);
+    private String getClientIp(ServerWebExchange exchange) {
+        String forwarded = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
+        return exchange.getRequest().getRemoteAddress() != null
+                ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
     }
 
-    /** Resolve rate limit key from client IP */
-    @Bean
-    public KeyResolver ipKeyResolver() {
-        return exchange -> {
-            String ip = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-            if (ip == null || ip.isBlank()) {
-                ip = exchange.getRequest().getRemoteAddress() != null
-                        ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
-                        : "unknown";
-            }
-            // Use only the first IP if X-Forwarded-For has a chain
-            return Mono.just(ip.split(",")[0].trim());
-        };
-    }
+    @Override
+    public int getOrder() { return -50; } // run before JwtAuthFilter
 }
