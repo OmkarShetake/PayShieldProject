@@ -36,6 +36,11 @@ public class RateLimiterConfig implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        // Skip rate limiting for OPTIONS preflight
+        if (exchange.getRequest().getMethod() == org.springframework.http.HttpMethod.OPTIONS) {
+            return chain.filter(exchange);
+        }
+
         String ip = getClientIp(exchange);
         String path = exchange.getRequest().getPath().value();
         int limit = path.startsWith("/api/auth") ? AUTH_LIMIT : DEFAULT_LIMIT;

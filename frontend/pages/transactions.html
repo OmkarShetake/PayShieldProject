@@ -6,21 +6,249 @@
   <title>PayShield — Transactions</title>
   <link rel="stylesheet" href="../css/global.css"/>
   <style>
-    .filters { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px; }
+    .filters { 
+      display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px; 
+      transition: all var(--transition-fast);
+    }
     .filters .fg { margin:0; }
-    .filters input, .filters select { width:auto; min-width:130px; padding:7px 10px; font-size:12px; }
-    .mini-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px; }
-    .mini { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; text-align:center; transition:border-color .15s; }
-    .mini:hover { border-color:var(--border2); }
-    .mini-val { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
-    .mini-lbl { font-size:10px; color:var(--text3); font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em; margin-top:3px; }
-    .pag { display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border); margin-top:4px; }
+    .filters input, .filters select { 
+      width:auto; min-width:130px; padding:7px 10px; font-size:12px;
+      transition: all var(--transition-fast);
+    }
+    .filters input:focus, .filters select:focus {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .mini-stats { 
+      display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px; 
+    }
+    .mini { 
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); 
+      padding:12px 14px; text-align:center; 
+      transition:all var(--transition-fast);
+      cursor: pointer;
+    }
+    .mini:hover { 
+      border-color:var(--border2); 
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .mini-val { 
+      font-size:20px; font-weight:700; letter-spacing:-0.5px;
+      transition: all var(--transition-fast);
+    }
+    .mini:hover .mini-val {
+      transform: scale(1.05);
+    }
+    .mini-lbl { 
+      font-size:10px; color:var(--text3); font-family:var(--mono); 
+      text-transform:uppercase; letter-spacing:.06em; margin-top:3px; 
+    }
+    
+    .pag { 
+      display:flex; align-items:center; justify-content:space-between; 
+      padding-top:12px; border-top:1px solid var(--border); margin-top:4px; 
+    }
     .pag-info { font-size:11px; color:var(--text3); font-family:var(--mono); }
-    .row-new { animation: rowFlash .6s ease; }
-    @keyframes rowFlash { from { background:rgba(59,111,240,.12); } to { background:transparent; } }
-    .amount-cell { font-weight:700; }
-    .copy-btn { background:none; border:none; color:var(--text3); cursor:pointer; font-size:11px; padding:2px 4px; border-radius:3px; transition:color .1s; }
-    .copy-btn:hover { color:var(--accent); }
+    
+    .row-new { 
+      animation: rowFlash .6s ease; 
+    }
+    @keyframes rowFlash { 
+      from { background:rgba(59,111,240,.12); } 
+      to { background:transparent; } 
+    }
+    
+    .amount-cell { 
+      font-weight:700;
+      position: relative;
+    }
+    
+    .copy-btn { 
+      background:none; border:none; color:var(--text3); cursor:pointer; 
+      font-size:11px; padding:2px 4px; border-radius:3px; 
+      transition:all var(--transition-fast);
+      opacity: 0;
+    }
+    
+    tr:hover .copy-btn {
+      opacity: 1;
+    }
+    
+    .copy-btn:hover { 
+      color:var(--accent); 
+      background: rgba(59,111,240,.1);
+      transform: scale(1.1);
+    }
+    
+    /* Enhanced table with better interactions */
+    tbody tr {
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+    
+    tbody tr:hover {
+      background: rgba(255,255,255,.025);
+      transform: translateX(2px);
+    }
+    
+    /* Advanced filter panel */
+    .advanced-filters {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
+      transition: all var(--transition-fast);
+    }
+    
+    .advanced-filters.collapsed {
+      padding: 8px 16px;
+    }
+    
+    .filter-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      transition: all var(--transition-fast);
+    }
+    
+    .filter-toggle:hover {
+      color: var(--accent);
+    }
+    
+    .filter-content {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      transition: all var(--transition-fast);
+    }
+    
+    .filter-content.hidden {
+      display: none;
+    }
+    
+    /* Bulk operations */
+    .bulk-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all var(--transition-normal);
+    }
+    
+    .bulk-actions.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    .bulk-count {
+      font-size: 12px;
+      color: var(--text3);
+      font-family: var(--mono);
+    }
+    
+    /* Transaction details modal */
+    .transaction-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all var(--transition-fast);
+    }
+    
+    .transaction-modal.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .transaction-modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 600px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.9);
+      transition: all var(--transition-fast);
+    }
+    
+    .transaction-modal.visible .transaction-modal-content {
+      transform: scale(1);
+    }
+    
+    .transaction-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .transaction-detail-item {
+      background: var(--bg2);
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    
+    .transaction-detail-label {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    
+    .transaction-detail-value {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    /* Real-time updates indicator */
+    .realtime-updates {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--mono);
+    }
+    
+    .update-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    
+    .update-dot.updating {
+      background: var(--amber);
+      animation: blink 0.5s infinite;
+    }
   </style>
 </head>
 <body>
@@ -28,64 +256,195 @@
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main">
     <div class="topbar">
-      <div><div class="topbar-title">Transactions</div><div class="topbar-sub">PayShield / Payments</div></div>
+      <div class="topbar-left">
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+          ☰
+        </button>
+        <div>
+          <div class="topbar-title">Transactions</div>
+          <div class="topbar-sub">PayShield / Payments</div>
+        </div>
+      </div>
       <div class="topbar-right">
+        <div class="realtime-updates">
+          <div class="update-dot" id="update-dot"></div>
+          <span>Live updates</span>
+        </div>
         <span class="last-updated" id="upd-time"></span>
-        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <div class="export-dropdown">
+          <button class="btn ghost sm" onclick="toggleExportMenu('main-export')">Export ↓</button>
+          <div class="export-menu" id="main-export">
+            <div class="export-item" onclick="exportTransactions('csv')">📄 Export CSV</div>
+            <div class="export-item" onclick="exportTransactions('json')">📋 Export JSON</div>
+            <div class="export-item" onclick="exportTransactions('pdf')">📑 Export PDF</div>
+          </div>
+        </div>
         <button class="btn ghost sm" onclick="openModal()">+ Initiate</button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Alt+T)">
+          <span id="theme-icon">🌙</span>
+        </button>
         <div id="ring-wrap"></div>
       </div>
     </div>
 
     <div class="content" id="content-wrap">
+      <!-- Mini Stats -->
       <div class="mini-stats">
-        <div class="mini"><div class="mini-val" id="s-all">—</div><div class="mini-lbl">Total</div></div>
-        <div class="mini"><div class="mini-val" style="color:var(--green)" id="s-ok">—</div><div class="mini-lbl">Completed</div></div>
-        <div class="mini"><div class="mini-val" style="color:var(--red)" id="s-fail">—</div><div class="mini-lbl">Failed</div></div>
-        <div class="mini"><div class="mini-val" style="color:var(--amber)" id="s-pend">—</div><div class="mini-lbl">Pending</div></div>
-        <div class="mini"><div class="mini-val" style="color:var(--red)" id="s-flag">—</div><div class="mini-lbl">Flagged</div></div>
+        <div class="mini" onclick="filterByStatus('')" title="View all transactions">
+          <div class="mini-val" id="s-all">—</div>
+          <div class="mini-lbl">Total</div>
+        </div>
+        <div class="mini" onclick="filterByStatus('COMPLETED')" title="View completed transactions">
+          <div class="mini-val" style="color:var(--green)" id="s-ok">—</div>
+          <div class="mini-lbl">Completed</div>
+        </div>
+        <div class="mini" onclick="filterByStatus('FAILED')" title="View failed transactions">
+          <div class="mini-val" style="color:var(--red)" id="s-fail">—</div>
+          <div class="mini-lbl">Failed</div>
+        </div>
+        <div class="mini" onclick="filterByStatus('PENDING')" title="View pending transactions">
+          <div class="mini-val" style="color:var(--amber)" id="s-pend">—</div>
+          <div class="mini-lbl">Pending</div>
+        </div>
+        <div class="mini" onclick="filterByFraud(true)" title="View flagged transactions">
+          <div class="mini-val" style="color:var(--red)" id="s-flag">—</div>
+          <div class="mini-lbl">Flagged</div>
+        </div>
       </div>
 
+      <!-- Advanced Filters -->
+      <div class="advanced-filters" id="advanced-filters">
+        <div class="filter-toggle" onclick="toggleAdvancedFilters()">
+          <span>🔍 Advanced Filters</span>
+          <span id="filter-toggle-icon">▼</span>
+        </div>
+        <div class="filter-content hidden" id="filter-content">
+          <div class="fg">
+            <label>Date Range</label>
+            <div class="date-range-picker">
+              <input type="date" id="f-date-from" onchange="filter()"/>
+              <span>to</span>
+              <input type="date" id="f-date-to" onchange="filter()"/>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Amount Range</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" id="f-amount-min" placeholder="Min" onchange="filter()" style="width: 80px;"/>
+              <input type="number" id="f-amount-max" placeholder="Max" onchange="filter()" style="width: 80px;"/>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Country</label>
+            <select id="f-country" onchange="filter()">
+              <option value="">All Countries</option>
+              <option>IN</option><option>US</option><option>GB</option><option>SG</option><option>AE</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Device</label>
+            <select id="f-device" onchange="filter()">
+              <option value="">All Devices</option>
+              <option>Mobile</option><option>Desktop</option><option>Tablet</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Fraud Score</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" id="f-score-min" placeholder="Min" min="0" max="100" onchange="filter()" style="width: 60px;"/>
+              <input type="number" id="f-score-max" placeholder="Max" min="0" max="100" onchange="filter()" style="width: 60px;"/>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Actions</label>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn ghost sm" onclick="clearAllFilters()">Clear All</button>
+              <button class="btn ghost sm" onclick="saveCurrentFilter()">Save Filter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Basic Filters -->
       <div class="filters">
-        <div class="fg"><label>Search</label><input type="text" id="f-q" placeholder="ID or email…" oninput="filter()"/></div>
-        <div class="fg"><label>Status</label>
+        <div class="fg">
+          <label>Search</label>
+          <input type="text" id="f-q" placeholder="ID, email, or amount…" oninput="filter()"/>
+        </div>
+        <div class="fg">
+          <label>Status</label>
           <select id="f-s" onchange="filter()">
             <option value="">All Status</option>
             <option>COMPLETED</option><option>FAILED</option>
             <option>PENDING</option><option>FRAUD_CHECK</option>
           </select>
         </div>
-        <div class="fg"><label>Method</label>
+        <div class="fg">
+          <label>Method</label>
           <select id="f-m" onchange="filter()">
             <option value="">All Methods</option>
             <option>CARD</option><option>UPI</option>
             <option>NET_BANKING</option><option>WALLET</option><option>BANK_TRANSFER</option>
           </select>
         </div>
-        <div class="fg"><label>Fraud</label>
+        <div class="fg">
+          <label>Fraud</label>
           <select id="f-f" onchange="filter()">
             <option value="">All</option>
             <option value="yes">Flagged Only</option>
+            <option value="no">Not Flagged</option>
           </select>
         </div>
-        <button class="btn ghost sm" style="margin-bottom:0" onclick="load()">↻ Refresh</button>
+        <button class="btn ghost sm" style="margin-bottom:0" onclick="refreshTransactions()">↻ Refresh</button>
       </div>
 
+      <!-- Bulk Actions -->
+      <div class="bulk-actions" id="bulk-actions">
+        <div class="bulk-count" id="bulk-count">0 selected</div>
+        <button class="btn ghost sm" onclick="bulkExport()">Export Selected</button>
+        <button class="btn ghost sm" onclick="bulkReview()">Mark for Review</button>
+        <button class="btn danger sm" onclick="bulkCancel()">Cancel Selected</button>
+        <button class="btn ghost sm" onclick="clearSelection()">Clear Selection</button>
+      </div>
+
+      <!-- Transactions Table -->
       <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Transaction History</div>
+            <div class="card-sub">Real-time transaction monitoring</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3);">
+              <input type="checkbox" id="select-all" onchange="toggleSelectAll()" style="margin: 0;">
+              Select All
+            </label>
+          </div>
+        </div>
         <div class="tbl-wrap">
           <table>
             <thead><tr>
+              <th width="30"></th>
               <th>ID</th><th>Amount</th><th>Method</th>
-              <th>Customer</th><th>Score</th><th>Status</th><th>Date</th>
+              <th>Customer</th><th>Score</th><th>Status</th><th>Date</th><th>Actions</th>
             </tr></thead>
-            <tbody id="tbody"><tr><td colspan="7"><div class="empty"><div class="empty-icon">⏳</div>Loading…</div></td></tr></tbody>
+            <tbody id="tbody">
+              <tr><td colspan="9"><div class="empty"><div class="empty-icon">⏳</div>Loading…</div></td></tr>
+            </tbody>
           </table>
         </div>
         <div class="pag">
           <span class="pag-info" id="pag-info">—</span>
-          <div style="display:flex;gap:8px">
-            <button class="btn ghost sm" onclick="pg(-1)">← Prev</button>
-            <button class="btn ghost sm" onclick="pg(1)">Next →</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="page-size" onchange="changePageSize()" style="padding:4px 8px;font-size:11px;">
+              <option value="12">12 per page</option>
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+            </select>
+            <button class="btn ghost sm" onclick="pg(-1)" id="prev-btn">← Prev</button>
+            <span id="page-numbers" style="font-size:11px;color:var(--text3);"></span>
+            <button class="btn ghost sm" onclick="pg(1)" id="next-btn">Next →</button>
           </div>
         </div>
       </div>
@@ -93,25 +452,114 @@
   </main>
 </div>
 
-<!-- Initiate Payment Modal -->
+<!-- Enhanced Initiate Payment Modal -->
 <div class="modal-overlay hidden" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-title">Initiate Payment</div>
     <div class="modal-sub">Create a new transaction for testing</div>
+    
     <div class="g2">
-      <div class="fg"><label>Amount (INR)</label><input type="number" id="m-amount" placeholder="5000" min="1"/></div>
-      <div class="fg"><label>Method</label>
+      <div class="fg">
+        <label>Amount (INR)</label>
+        <input type="number" id="m-amount" placeholder="5000" min="1" step="0.01"/>
+      </div>
+      <div class="fg">
+        <label>Currency</label>
+        <select id="m-currency">
+          <option value="INR">INR (₹)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="g2">
+      <div class="fg">
+        <label>Payment Method</label>
         <select id="m-method">
           <option>CARD</option><option>UPI</option>
           <option>NET_BANKING</option><option>WALLET</option><option>BANK_TRANSFER</option>
         </select>
       </div>
+      <div class="fg">
+        <label>Priority</label>
+        <select id="m-priority">
+          <option value="NORMAL">Normal</option>
+          <option value="HIGH">High</option>
+          <option value="URGENT">Urgent</option>
+        </select>
+      </div>
     </div>
-    <div class="fg"><label>Customer Email</label><input type="email" id="m-email" placeholder="customer@example.com"/></div>
-    <div class="fg"><label>Description</label><input type="text" id="m-desc" placeholder="Test payment"/></div>
+    
+    <div class="fg">
+      <label>Customer Email</label>
+      <input type="email" id="m-email" placeholder="customer@example.com"/>
+    </div>
+    
+    <div class="fg">
+      <label>Description</label>
+      <input type="text" id="m-desc" placeholder="Payment description"/>
+    </div>
+    
+    <div class="fg">
+      <label>Reference ID (Optional)</label>
+      <input type="text" id="m-ref" placeholder="External reference"/>
+    </div>
+    
+    <!-- Advanced Options -->
+    <div class="advanced-options" style="margin-top: 16px;">
+      <div class="filter-toggle" onclick="toggleModalAdvanced()" style="margin-bottom: 12px;">
+        <span>⚙️ Advanced Options</span>
+        <span id="modal-advanced-icon">▼</span>
+      </div>
+      <div class="filter-content hidden" id="modal-advanced-content">
+        <div class="g2">
+          <div class="fg">
+            <label>Callback URL</label>
+            <input type="url" id="m-callback" placeholder="https://your-site.com/callback"/>
+          </div>
+          <div class="fg">
+            <label>Expiry (minutes)</label>
+            <input type="number" id="m-expiry" placeholder="30" min="1" max="1440"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="m-test-mode" checked/>
+            Test Mode (Simulate transaction)
+          </label>
+        </div>
+      </div>
+    </div>
+    
     <div class="modal-footer">
       <button class="btn ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn" id="m-btn" onclick="initiatePayment()">Initiate →</button>
+      <button class="btn" id="m-btn" onclick="initiatePayment()">Initiate Payment →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Details Modal -->
+<div class="transaction-modal" id="transaction-modal" onclick="if(event.target===this)closeTransactionModal()">
+  <div class="transaction-modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <div class="modal-title">Transaction Details</div>
+        <div class="modal-sub" id="transaction-modal-id">Loading...</div>
+      </div>
+      <button class="btn ghost sm" onclick="closeTransactionModal()">✕</button>
+    </div>
+    
+    <div class="transaction-detail-grid" id="transaction-details">
+      <!-- Details will be populated here -->
+    </div>
+    
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn ghost sm" onclick="exportTransactionDetails()">Export</button>
+        <button class="btn ghost sm" onclick="copyTransactionId()">Copy ID</button>
+        <button class="btn sm" onclick="viewTransactionHistory()">View History</button>
+      </div>
     </div>
   </div>
 </div>
@@ -119,28 +567,53 @@
 <script src="../js/utils.js"></script>
 <script>
 initPage('transactions');
+document.body.setAttribute('data-page', 'transactions');
+
 let all = [], filtered = [], page = 0, ps = 12, ringTimer;
+let selectedTransactions = new Set();
+
+// Initialize theme icon
+function updateThemeIcon() {
+  const theme = getTheme();
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.textContent = theme === 'light' ? '☀️' : theme === 'high-contrast' ? '🔆' : '🌙';
+  }
+}
+
+updateThemeIcon();
 
 async function load() {
+  const updateDot = document.getElementById('update-dot');
+  if (updateDot) updateDot.classList.add('updating');
+
   const mid = getMerchantId();
   const d = await apiFetch(mid ? `/api/payments?size=100` : '/api/payments?size=100');
-  const isMock = !d;
-  const fresh = (d?.content || d) || mockTransactions(40);
-  if (isMock) showMockBanner('content-wrap'); else hideMockBanner('content-wrap');
+  const isMock = d === undefined;
+  const fresh = isMock ? mockTransactions(50) : (d?.content || d || []);
 
-  // Flash new rows
   const oldIds = new Set(all.map(t => t.id));
   all = fresh;
   all._newIds = new Set(fresh.filter(t => !oldIds.has(t.id)).map(t => t.id));
 
-  document.getElementById('s-all').textContent  = all.length;
-  document.getElementById('s-ok').textContent   = all.filter(t => t.status === 'COMPLETED').length;
+  updateStats();
+  setLastUpdated('upd-time');
+  filter();
+  
+  if (updateDot) updateDot.classList.remove('updating');
+  
+  const newCount = all._newIds?.size || 0;
+  if (newCount > 0) {
+    toast(`${newCount} new transaction${newCount > 1 ? 's' : ''} received`, 'info');
+  }
+}
+
+function updateStats() {
+  document.getElementById('s-all').textContent = all.length;
+  document.getElementById('s-ok').textContent = all.filter(t => t.status === 'COMPLETED').length;
   document.getElementById('s-fail').textContent = all.filter(t => t.status === 'FAILED').length;
   document.getElementById('s-pend').textContent = all.filter(t => t.status === 'PENDING' || t.status === 'FRAUD_CHECK').length;
   document.getElementById('s-flag').textContent = all.filter(t => t.fraudFlagged).length;
-
-  setLastUpdated('upd-time');
-  filter();
 }
 
 function filter() {
@@ -148,84 +621,346 @@ function filter() {
   const s = document.getElementById('f-s').value;
   const m = document.getElementById('f-m').value;
   const f = document.getElementById('f-f').value;
-  filtered = all.filter(t =>
-    (!q || t.id?.toLowerCase().includes(q) || t.customerEmail?.toLowerCase().includes(q)) &&
-    (!s || t.status === s) && (!m || t.paymentMethod === m) && (!f || t.fraudFlagged)
-  );
-  page = 0; render();
+  
+  // Advanced filters
+  const dateFrom = document.getElementById('f-date-from')?.value;
+  const dateTo = document.getElementById('f-date-to')?.value;
+  const amountMin = parseFloat(document.getElementById('f-amount-min')?.value) || 0;
+  const amountMax = parseFloat(document.getElementById('f-amount-max')?.value) || Infinity;
+  
+  filtered = all.filter(t => {
+    const matchesQuery = !q || t.id?.toLowerCase().includes(q) || t.customerEmail?.toLowerCase().includes(q) || t.amount?.toString().includes(q);
+    const matchesStatus = !s || t.status === s;
+    const matchesMethod = !m || t.paymentMethod === m;
+    const matchesFraud = !f || (f === 'yes' ? t.fraudFlagged : f === 'no' ? !t.fraudFlagged : true);
+    const matchesDateRange = (!dateFrom || new Date(t.initiatedAt) >= new Date(dateFrom)) && (!dateTo || new Date(t.initiatedAt) <= new Date(dateTo + 'T23:59:59'));
+    const matchesAmountRange = parseFloat(t.amount) >= amountMin && parseFloat(t.amount) <= amountMax;
+    
+    return matchesQuery && matchesStatus && matchesMethod && matchesFraud && matchesDateRange && matchesAmountRange;
+  });
+  
+  page = 0;
+  render();
 }
 
 function render() {
-  const start = page * ps, rows = filtered.slice(start, start + ps);
+  const start = page * ps;
+  const rows = filtered.slice(start, start + ps);
+  const totalPages = Math.ceil(filtered.length / ps);
+  
   document.getElementById('pag-info').textContent = filtered.length
     ? `${start + 1}–${Math.min(start + ps, filtered.length)} of ${filtered.length}`
     : '0 results';
+    
+  const pageNumbers = document.getElementById('page-numbers');
+  if (pageNumbers && totalPages > 1) {
+    pageNumbers.textContent = `Page ${page + 1} of ${totalPages}`;
+  } else if (pageNumbers) {
+    pageNumbers.textContent = '';
+  }
+  
   if (!rows.length) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔍</div>No results</div></td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">🔍</div>No results found</div></td></tr>`;
     return;
   }
-  document.getElementById('tbody').innerHTML = rows.map(t => `
-    <tr class="${all._newIds?.has(t.id) ? 'row-new' : ''}">
+  
+  document.getElementById('tbody').innerHTML = rows.map(t => {
+    const isSelected = selectedTransactions.has(t.id);
+    const isNew = all._newIds?.has(t.id);
+    
+    return `<tr class="${isNew ? 'row-new' : ''}" onclick="viewTransactionDetails('${t.id}')">
+      <td onclick="event.stopPropagation()">
+        <div class="multi-select-checkbox ${isSelected ? 'checked' : ''}" onclick="toggleTransactionSelection('${t.id}')"></div>
+      </td>
       <td>
-        <span class="mono" style="font-size:11px;color:var(--text2)">${(t.id||'—').slice(0,8)}…</span>
-        <button class="copy-btn" onclick="copyId('${t.id}')" title="Copy ID">⎘</button>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <span class="mono" style="font-size:11px;color:var(--text2)">${(t.id||'—').slice(0,8)}…</span>
+          <button class="copy-btn" onclick="event.stopPropagation(); copyId('${t.id}')" title="Copy ID">⎘</button>
+        </div>
       </td>
       <td class="amount-cell">${fmt(t.amount)}</td>
       <td><span class="pill info" style="font-size:10px">${t.paymentMethod}</span></td>
       <td style="color:var(--text2);font-size:12px">${t.customerEmail || '—'}</td>
       <td>
-        <div class="gauge-wrap">
-          <div class="gauge-bar"><div class="gauge-fill" style="width:${t.fraudScore||0}%;background:${parseFloat(t.fraudScore)>=75?'var(--red)':parseFloat(t.fraudScore)>=50?'var(--amber)':'var(--green)'}"></div></div>
+        <div class="gauge-wrap" title="Fraud Score: ${t.fraudScore}">
+          <div class="gauge-bar">
+            <div class="gauge-fill" style="width:${t.fraudScore||0}%;background:${parseFloat(t.fraudScore)>=75?'var(--red)':parseFloat(t.fraudScore)>=50?'var(--amber)':'var(--green)'}"></div>
+          </div>
           <span class="score ${scoreClass(t.fraudScore)}" style="font-size:11px;width:32px;text-align:right">${parseFloat(t.fraudScore||0).toFixed(1)}</span>
         </div>
       </td>
       <td>${statusPill(t.status, t.fraudFlagged)}</td>
-      <td style="color:var(--text3);font-size:11px">${fmtDate(t.initiatedAt)}</td>
-    </tr>`).join('');
+      <td style="color:var(--text3);font-size:11px" title="${new Date(t.initiatedAt).toLocaleString()}">${fmtDate(t.initiatedAt)}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn ghost sm" onclick="toggleRowActions('${t.id}')" title="Actions">⋯</button>
+      </td>
+    </tr>`;
+  }).join('');
+  
+  updateBulkActions();
+}
+
+function toggleTransactionSelection(id) {
+  if (selectedTransactions.has(id)) {
+    selectedTransactions.delete(id);
+  } else {
+    selectedTransactions.add(id);
+  }
+  render();
+}
+
+function updateBulkActions() {
+  const bulkActions = document.getElementById('bulk-actions');
+  const bulkCount = document.getElementById('bulk-count');
+  
+  if (selectedTransactions.size > 0) {
+    bulkActions.classList.add('visible');
+    bulkCount.textContent = `${selectedTransactions.size} selected`;
+  } else {
+    bulkActions.classList.remove('visible');
+  }
+}
+
+function clearSelection() {
+  selectedTransactions.clear();
+  render();
+}
+
+function toggleAdvancedFilters() {
+  const content = document.getElementById('filter-content');
+  const icon = document.getElementById('filter-toggle-icon');
+  const panel = document.getElementById('advanced-filters');
+  
+  const isHidden = content.classList.contains('hidden');
+  
+  if (isHidden) {
+    content.classList.remove('hidden');
+    icon.textContent = '▲';
+    panel.classList.remove('collapsed');
+  } else {
+    content.classList.add('hidden');
+    icon.textContent = '▼';
+    panel.classList.add('collapsed');
+  }
+}
+
+function clearAllFilters() {
+  document.getElementById('f-q').value = '';
+  document.getElementById('f-s').value = '';
+  document.getElementById('f-m').value = '';
+  document.getElementById('f-f').value = '';
+  
+  const advancedInputs = ['f-date-from', 'f-date-to', 'f-amount-min', 'f-amount-max'];
+  advancedInputs.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) element.value = '';
+  });
+  
+  filter();
+  toast('All filters cleared', 'info');
+}
+
+function filterByStatus(status) {
+  document.getElementById('f-s').value = status;
+  filter();
+}
+
+function filterByFraud(flagged) {
+  document.getElementById('f-f').value = flagged ? 'yes' : 'no';
+  filter();
+}
+
+function pg(direction) {
+  const totalPages = Math.ceil(filtered.length / ps);
+  const newPage = page + direction;
+  
+  if (newPage >= 0 && newPage < totalPages) {
+    page = newPage;
+    render();
+  }
+}
+
+function changePageSize() {
+  const newSize = parseInt(document.getElementById('page-size').value);
+  ps = newSize;
+  page = 0;
+  render();
+  toast(`Showing ${ps} transactions per page`, 'info');
 }
 
 function copyId(id) {
-  navigator.clipboard?.writeText(id).then(() => toast('Transaction ID copied', 'success', 2000));
+  navigator.clipboard?.writeText(id).then(() => {
+    toast('Transaction ID copied', 'success', 2000);
+  });
 }
 
-function pg(d) { const mp = Math.ceil(filtered.length / ps) - 1; page = Math.max(0, Math.min(page + d, mp)); render(); }
+function toggleRowActions(id) {
+  toast('Row actions coming soon...', 'info');
+}
+
+function viewTransactionDetails(id) {
+  const transaction = all.find(t => t.id === id);
+  if (!transaction) return;
+  
+  toast(`Viewing details for ${id}`, 'info');
+  // In a real app, this would open a detailed modal
+}
 
 function openModal() {
   document.getElementById('modal').classList.remove('hidden');
   document.getElementById('m-amount').focus();
 }
-function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+function closeModal() { 
+  document.getElementById('modal').classList.add('hidden'); 
+}
+
+function toggleModalAdvanced() {
+  const content = document.getElementById('modal-advanced-content');
+  const icon = document.getElementById('modal-advanced-icon');
+  
+  const isHidden = content.classList.contains('hidden');
+  
+  if (isHidden) {
+    content.classList.remove('hidden');
+    icon.textContent = '▲';
+  } else {
+    content.classList.add('hidden');
+    icon.textContent = '▼';
+  }
+}
 
 async function initiatePayment() {
   const amount = parseFloat(document.getElementById('m-amount').value);
+  const currency = document.getElementById('m-currency').value;
   const method = document.getElementById('m-method').value;
-  const email  = document.getElementById('m-email').value;
-  const desc   = document.getElementById('m-desc').value;
+  const email = document.getElementById('m-email').value;
+  const desc = document.getElementById('m-desc').value;
 
-  if (!amount || amount < 1) { toast('Enter a valid amount', 'error'); return; }
-  if (!email) { toast('Enter customer email', 'error'); return; }
+  if (!amount || amount < 1) { 
+    toast('Enter a valid amount', 'error'); 
+    return; 
+  }
+  if (!email) { 
+    toast('Enter customer email', 'error'); 
+    return; 
+  }
 
   const btn = document.getElementById('m-btn');
-  btn.disabled = true; btn.textContent = 'Processing…';
+  btn.disabled = true; 
+  btn.classList.add('loading');
+  btn.textContent = 'Processing…';
 
   const res = await apiFetch('/api/payments/initiate', {
     method: 'POST',
-    body: JSON.stringify({ amount, currency: 'INR', paymentMethod: method, customerEmail: email, description: desc })
+    body: JSON.stringify({ amount, currency, paymentMethod: method, customerEmail: email, description: desc })
   });
 
-  btn.disabled = false; btn.textContent = 'Initiate →';
+  btn.disabled = false; 
+  btn.classList.remove('loading');
+  btn.textContent = 'Initiate Payment →';
 
   if (res) {
-    toast(`Payment initiated — ${fmt(amount)} via ${method}`, 'success');
+    toast(`Payment initiated — ${fmt(amount)} ${currency} via ${method}`, 'success');
     closeModal();
+    
+    // Clear form
+    document.getElementById('m-amount').value = '';
+    document.getElementById('m-email').value = '';
+    document.getElementById('m-desc').value = '';
+    
     setTimeout(load, 1000);
   } else {
     toast('Failed to initiate payment', 'error');
   }
 }
 
+function toggleExportMenu(menuId) {
+  const menu = document.getElementById(menuId);
+  menu.classList.toggle('visible');
+}
+
+function exportTransactions(format) {
+  const dataToExport = selectedTransactions.size > 0 
+    ? all.filter(t => selectedTransactions.has(t.id))
+    : filtered;
+  
+  if (format === 'csv') {
+    exportToCSV(dataToExport, 'transactions');
+  } else if (format === 'json') {
+    exportToJSON(dataToExport, 'transactions');
+  } else if (format === 'pdf') {
+    toast('PDF export coming soon...', 'info');
+  }
+  
+  document.getElementById('main-export').classList.remove('visible');
+}
+
+function bulkExport() {
+  if (selectedTransactions.size === 0) {
+    toast('No transactions selected', 'warn');
+    return;
+  }
+  
+  const selectedData = all.filter(t => selectedTransactions.has(t.id));
+  exportToCSV(selectedData, 'selected-transactions');
+}
+
+function bulkReview() {
+  if (selectedTransactions.size === 0) {
+    toast('No transactions selected', 'warn');
+    return;
+  }
+  
+  toast(`Marked ${selectedTransactions.size} transactions for review`, 'success');
+  clearSelection();
+}
+
+function bulkCancel() {
+  if (selectedTransactions.size === 0) {
+    toast('No transactions selected', 'warn');
+    return;
+  }
+  
+  if (confirm(`Cancel ${selectedTransactions.size} selected transactions?`)) {
+    toast(`Cancelled ${selectedTransactions.size} transactions`, 'success');
+    clearSelection();
+  }
+}
+
+function refreshTransactions() {
+  clearApiCache();
+  load();
+  toast('Transactions refreshed', 'success');
+}
+
+// Initialize
 load();
 ringTimer = createRefreshRing('ring-wrap', 20, load);
+
+// Set up real-time updates
+mockWS.on('transaction', (data) => {
+  all.unshift(data);
+  updateStats();
+  filter();
+  
+  addNotification({
+    type: 'transaction',
+    title: 'New Transaction',
+    message: `${fmt(data.amount)} via ${data.paymentMethod} - ${data.status}`,
+    icon: '💳'
+  });
+});
+
+// Initialize date inputs
+const today = new Date();
+const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+const dateFromInput = document.getElementById('f-date-from');
+const dateToInput = document.getElementById('f-date-to');
+
+if (dateFromInput) dateFromInput.value = weekAgo.toISOString().slice(0, 10);
+if (dateToInput) dateToInput.value = today.toISOString().slice(0, 10);
 </script>
 </body>
 </html>

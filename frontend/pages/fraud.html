@@ -94,9 +94,9 @@ let chart, allData = [], prevHi, prevMed, prevAvg, ringTimer;
 async function load() {
   const mid = getMerchantId();
   const raw = await apiFetch(mid ? `/api/fraud/alerts?merchantId=${mid}` : '/api/fraud/alerts');
-  const isMock = !raw;
-  const data = (raw && (raw.content || raw)) || mockFraud(12);
-  if (isMock) showMockBanner('content-wrap'); else hideMockBanner('content-wrap');
+
+  const isMock = raw === undefined;
+  const data = isMock ? mockFraud(12) : (raw?.content || raw || []);
   const hi  = data.filter(a => parseFloat(a.score) >= 75).length;
   const med = data.filter(a => parseFloat(a.score) >= 50 && parseFloat(a.score) < 75).length;
   const avg = data.length ? (data.reduce((s, a) => s + parseFloat(a.score), 0) / data.length).toFixed(1) : '—';

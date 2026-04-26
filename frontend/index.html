@@ -6,30 +6,176 @@
   <title>PayShield — Sign In</title>
   <link rel="stylesheet" href="css/global.css"/>
   <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+    body { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      background: var(--bg);
+      transition: all var(--transition-normal);
+    }
 
-    .page { display: flex; width: 100%; max-width: 960px; padding: 32px; gap: 64px; align-items: center; }
+    .page { 
+      display: flex; 
+      width: 100%; 
+      max-width: 960px; 
+      padding: 32px; 
+      gap: 64px; 
+      align-items: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Theme toggle for login page */
+    .login-theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 12px;
+      color: var(--text2);
+      z-index: 1000;
+    }
+
+    .login-theme-toggle:hover {
+      background: var(--surface2);
+      color: var(--text);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
 
     /* Left */
-    .left { flex: 1; }
+    .left { 
+      flex: 1;
+      animation: slideInLeft 0.8s ease;
+    }
 
-    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
-    .brand-mark { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .brand-name { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-    .brand-name span { color: var(--accent); }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
 
-    .left h1 { font-size: 36px; font-weight: 700; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; color: var(--text); }
-    .left p { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 36px; max-width: 380px; }
+    .brand { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      margin-bottom: 40px;
+      transition: transform var(--transition-fast);
+    }
 
-    .feat-list { display: flex; flex-direction: column; gap: 12px; }
-    .feat { display: flex; align-items: center; gap: 10px; }
-    .feat-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .brand:hover {
+      transform: scale(1.02);
+    }
+
+    .brand-mark { 
+      width: 32px; 
+      height: 32px; 
+      background: var(--accent); 
+      border-radius: 8px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .brand:hover .brand-mark {
+      box-shadow: var(--shadow-md);
+      transform: rotate(5deg);
+    }
+
+    .brand-name { 
+      font-size: 18px; 
+      font-weight: 700; 
+      letter-spacing: -0.3px; 
+    }
+
+    .brand-name span { 
+      color: var(--accent); 
+    }
+
+    .left h1 { 
+      font-size: 36px; 
+      font-weight: 700; 
+      letter-spacing: -1px; 
+      line-height: 1.15; 
+      margin-bottom: 14px; 
+      color: var(--text);
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .left p { 
+      font-size: 14px; 
+      color: var(--text2); 
+      line-height: 1.7; 
+      margin-bottom: 36px; 
+      max-width: 380px; 
+    }
+
+    .feat-list { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+    }
+
+    .feat { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px;
+      padding: 8px 0;
+      transition: all var(--transition-fast);
+      border-radius: var(--radius);
+    }
+
+    .feat:hover {
+      background: rgba(59, 111, 240, 0.05);
+      padding-left: 8px;
+      transform: translateX(4px);
+    }
+
+    .feat-icon { 
+      width: 30px; 
+      height: 30px; 
+      border-radius: 7px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 14px; 
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
+    }
+
+    .feat:hover .feat-icon {
+      transform: scale(1.1);
+    }
+
     .feat-icon.g  { background: rgba(34,197,94,.1); }
     .feat-icon.b  { background: rgba(59,111,240,.1); }
     .feat-icon.a  { background: rgba(245,158,11,.1); }
     .feat-icon.p  { background: rgba(139,92,246,.1); }
-    .feat-text    { font-size: 13px; color: var(--text2); }
-    .feat-text strong { color: var(--text); font-weight: 500; }
+
+    .feat-text { 
+      font-size: 13px; 
+      color: var(--text2); 
+    }
+
+    .feat-text strong { 
+      color: var(--text); 
+      font-weight: 500; 
+    }
 
     /* Right — login card */
     .card-login {
@@ -39,37 +185,224 @@
       border-radius: 12px;
       padding: 32px;
       flex-shrink: 0;
+      box-shadow: var(--shadow-lg);
+      transition: all var(--transition-fast);
+      animation: slideInRight 0.8s ease;
     }
 
-    .card-login h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 4px; }
-    .card-login .sub { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
 
-    .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; font-family: var(--mono); margin-bottom: 5px; }
-    .field input { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; width: 100%; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; transition: border-color .12s; }
-    .field input:focus { border-color: var(--accent); }
+    .card-login:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
 
-    .btn-login { width: 100%; justify-content: center; padding: 11px; font-size: 14px; font-weight: 600; border-radius: 8px; margin-top: 4px; }
+    .card-login h2 { 
+      font-size: 18px; 
+      font-weight: 600; 
+      letter-spacing: -0.3px; 
+      margin-bottom: 4px; 
+    }
 
-    .err { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 7px; padding: 9px 12px; font-size: 12px; color: var(--red); margin-top: 10px; }
+    .card-login .sub { 
+      font-size: 13px; 
+      color: var(--text3); 
+      margin-bottom: 24px; 
+    }
 
-    .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+    .field { 
+      margin-bottom: 14px; 
+    }
 
-    .demo-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
-    .demo-label { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-    .demo-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .demo-row:last-child { margin-bottom: 0; }
-    .demo-key { font-size: 12px; color: var(--text3); }
-    .demo-val { font-size: 12px; font-family: var(--mono); color: var(--accent); cursor: pointer; padding: 1px 6px; border-radius: 4px; transition: background .1s; }
-    .demo-val:hover { background: rgba(59,111,240,.1); }
+    .field label { 
+      display: block; 
+      font-size: 11px; 
+      font-weight: 500; 
+      color: var(--text3); 
+      text-transform: uppercase; 
+      letter-spacing: 0.07em; 
+      font-family: var(--mono); 
+      margin-bottom: 5px; 
+    }
 
-    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.25); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .field input { 
+      background: var(--bg2); 
+      border: 1px solid var(--border); 
+      border-radius: 7px; 
+      padding: 10px 12px; 
+      width: 100%; 
+      color: var(--text); 
+      font-size: 13px; 
+      font-family: var(--font); 
+      outline: none; 
+      transition: all var(--transition-fast);
+    }
+
+    .field input:focus { 
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 111, 240, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .field input:hover {
+      border-color: var(--border2);
+    }
+
+    .btn-login { 
+      width: 100%; 
+      justify-content: center; 
+      padding: 11px; 
+      font-size: 14px; 
+      font-weight: 600; 
+      border-radius: 8px; 
+      margin-top: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .err { 
+      background: rgba(239,68,68,.08); 
+      border: 1px solid rgba(239,68,68,.2); 
+      border-radius: 7px; 
+      padding: 9px 12px; 
+      font-size: 12px; 
+      color: var(--red); 
+      margin-top: 10px;
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .divider { 
+      border: none; 
+      border-top: 1px solid var(--border); 
+      margin: 18px 0; 
+    }
+
+    .demo-box { 
+      background: var(--bg2); 
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      padding: 12px 14px;
+      transition: all var(--transition-fast);
+    }
+
+    .demo-box:hover {
+      border-color: var(--border2);
+      background: var(--surface2);
+    }
+
+    .demo-label { 
+      font-size: 10px; 
+      font-family: var(--mono); 
+      color: var(--text3); 
+      text-transform: uppercase; 
+      letter-spacing: 0.1em; 
+      margin-bottom: 8px; 
+    }
+
+    .demo-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 5px; 
+    }
+
+    .demo-row:last-child { 
+      margin-bottom: 0; 
+    }
+
+    .demo-key { 
+      font-size: 12px; 
+      color: var(--text3); 
+    }
+
+    .demo-val { 
+      font-size: 12px; 
+      font-family: var(--mono); 
+      color: var(--accent); 
+      cursor: pointer; 
+      padding: 1px 6px; 
+      border-radius: 4px; 
+      transition: all var(--transition-fast);
+    }
+
+    .demo-val:hover { 
+      background: rgba(59,111,240,.1);
+      transform: scale(1.05);
+    }
+
+    .spinner { 
+      width: 14px; 
+      height: 14px; 
+      border: 2px solid rgba(255,255,255,.25); 
+      border-top-color: #fff; 
+      border-radius: 50%; 
+      animation: spin .6s linear infinite; 
+    }
+
+    @keyframes spin { 
+      to { transform: rotate(360deg); } 
+    }
+
+    /* Responsive design for login */
+    @media (max-width: 900px) {
+      .page {
+        flex-direction: column;
+        gap: 32px;
+        padding: 20px;
+      }
+
+      .left {
+        text-align: center;
+      }
+
+      .left h1 {
+        font-size: 28px;
+      }
+
+      .card-login {
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .feat {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 16px;
+      }
+
+      .card-login {
+        padding: 24px;
+      }
+
+      .left h1 {
+        font-size: 24px;
+      }
+
+      .feat-list {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
-<div class="page">
+<div class="login-theme-toggle" onclick="toggleTheme()" title="Toggle theme (Alt+T)">
+  <span id="theme-icon">🌙</span> Theme
+</div>
 
+<div class="page">
   <!-- Left -->
   <div class="left">
     <div class="brand">
@@ -137,14 +470,44 @@
 
 <script src="js/utils.js"></script>
 <script>
+  // Initialize theme on page load
+  initTheme();
+  updateThemeIcon();
+
   if (isLoggedIn()) window.location.href = 'pages/overview.html';
+
+  function updateThemeIcon() {
+    const theme = getTheme();
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+      icon.textContent = theme === 'light' ? '☀️' : theme === 'high-contrast' ? '🔆' : '🌙';
+    }
+  }
+
+  // Override toggleTheme to update icon
+  const originalToggleTheme = toggleTheme;
+  toggleTheme = function() {
+    originalToggleTheme();
+    updateThemeIcon();
+  };
 
   function fill() {
     document.getElementById('email').value    = 'admin@payshield.com';
     document.getElementById('password').value = 'Admin@123';
+    
+    // Add visual feedback
+    const inputs = document.querySelectorAll('#email, #password');
+    inputs.forEach(input => {
+      input.style.background = 'rgba(34, 197, 94, 0.1)';
+      setTimeout(() => {
+        input.style.background = '';
+      }, 1000);
+    });
   }
 
-  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  document.getElementById('password').addEventListener('keydown', e => { 
+    if (e.key === 'Enter') login(); 
+  });
 
   async function login() {
     const email = document.getElementById('email').value.trim();
@@ -152,22 +515,39 @@
     const btn   = document.getElementById('btn');
     const err   = document.getElementById('err');
 
-    if (!email || !pass) { showErr('Enter email and password'); return; }
+    if (!email || !pass) { 
+      showErr('Enter email and password'); 
+      return; 
+    }
 
     btn.disabled = true;
+    btn.classList.add('loading');
     btn.innerHTML = '<div class="spinner"></div> Signing in…';
     err.classList.add('hidden');
 
+    // Add loading animation to the card
+    const card = document.querySelector('.card-login');
+    card.style.opacity = '0.8';
+
     try {
       const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
 
       if (res.ok) {
         const data = await res.json();
         saveAuth(data.accessToken, data.user?.email || email, data.user?.merchantId || data.user?.id || '');
-        window.location.href = 'pages/overview.html';
+        
+        // Success animation
+        btn.innerHTML = '✓ Success! Redirecting...';
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        
+        setTimeout(() => {
+          window.location.href = 'pages/overview.html';
+        }, 1000);
         return;
       }
 
@@ -182,10 +562,18 @@
     } catch (e) {
       // Backend unreachable — allow demo credentials to bypass for portfolio demo
       if (email === 'admin@payshield.com' && pass === 'Admin@123') {
-        saveAuth('demo-mode', email, 'demo-merchant');
-        window.location.href = 'pages/overview.html';
+        saveAuth('demo-mode', email, '');
+        
+        btn.innerHTML = '✓ Demo mode activated!';
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        
+        setTimeout(() => {
+          window.location.href = 'pages/overview.html';
+        }, 1000);
         return;
       }
+      
       showErr(e.message === 'server_error'
         ? 'Server error — try again'
         : 'Cannot reach server — start the backend or use demo credentials');
@@ -194,12 +582,32 @@
 
   function showErr(msg) {
     const err = document.getElementById('err');
+    const btn = document.getElementById('btn');
+    const card = document.querySelector('.card-login');
+    
     err.textContent = msg;
     err.classList.remove('hidden');
-    const btn = document.getElementById('btn');
+    
     btn.disabled = false;
+    btn.classList.remove('loading');
     btn.innerHTML = 'Sign in';
+    
+    card.style.opacity = '';
+    
+    // Shake animation for error
+    card.style.animation = 'shake 0.5s ease';
+    setTimeout(() => {
+      card.style.animation = '';
+    }, 500);
   }
+
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key === 't') {
+      e.preventDefault();
+      toggleTheme();
+    }
+  });
 </script>
 </body>
 </html>

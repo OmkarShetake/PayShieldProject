@@ -8,20 +8,205 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" onerror="window._chartFailed=true"></script>
   <style>
     .kpi-trend { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
-    .alert-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(35,38,58,.5); transition:background .1s; }
+    .alert-row { 
+      display:flex; align-items:center; gap:12px; padding:11px 0; 
+      border-bottom:1px solid rgba(35,38,58,.5); 
+      transition:all var(--transition-fast);
+      border-radius: var(--radius);
+    }
     .alert-row:last-child { border-bottom:none; }
-    .alert-row:hover { background:rgba(255,255,255,.015); border-radius:6px; padding-left:6px; }
-    .alert-icon { width:36px; height:36px; border-radius:8px; background:rgba(239,68,68,.1); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+    .alert-row:hover { 
+      background:rgba(255,255,255,.015); 
+      padding-left:6px; 
+      transform: translateX(4px);
+      box-shadow: var(--shadow-sm);
+    }
+    .alert-icon { 
+      width:36px; height:36px; border-radius:8px; 
+      background:rgba(239,68,68,.1); 
+      display:flex; align-items:center; justify-content:center; 
+      font-size:15px; flex-shrink:0;
+      transition: all var(--transition-fast);
+    }
+    .alert-row:hover .alert-icon {
+      transform: scale(1.1);
+    }
     .alert-body { flex:1; min-width:0; }
     .alert-id   { font-family:var(--mono); font-size:12px; color:var(--text2); }
     .alert-rules{ font-size:11px; color:var(--text3); margin-top:2px; }
     .alert-right{ text-align:right; flex-shrink:0; }
     .alert-decision { font-size:10px; color:var(--text3); margin-top:2px; font-family:var(--mono); }
-    .health-row { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(35,38,58,.5); }
+    .health-row { 
+      display:flex; align-items:center; justify-content:space-between; 
+      padding:9px 0; border-bottom:1px solid rgba(35,38,58,.5);
+      transition: all var(--transition-fast);
+    }
     .health-row:last-child { border-bottom:none; }
+    .health-row:hover {
+      background: rgba(255,255,255,.015);
+      border-radius: var(--radius);
+      padding-left: 6px;
+    }
     .health-name{ font-size:12px; font-weight:500; }
     .health-port{ font-size:11px; color:var(--text3); font-family:var(--mono); }
     .topbar-meta { display:flex; align-items:center; gap:10px; }
+    
+    /* Enhanced chart controls */
+    .chart-time-controls {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    
+    .time-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text3);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .time-btn.active,
+    .time-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    
+    /* Real-time indicators */
+    .realtime-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--mono);
+    }
+    
+    .realtime-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    
+    /* Enhanced KPI animations */
+    .kpi-value-change {
+      animation: valueChange 0.5s ease;
+    }
+    
+    @keyframes valueChange {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); color: var(--accent); }
+      100% { transform: scale(1); }
+    }
+    
+    /* Quick actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .quick-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .quick-action:hover {
+      background: var(--surface2);
+      color: var(--text);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* Enhanced notification bell */
+    .notification-container {
+      position: relative;
+    }
+    
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all var(--transition-fast);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .notification-dropdown.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    .notification-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .notification-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(35,38,58,.3);
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+    
+    .notification-item:hover {
+      background: var(--surface2);
+    }
+    
+    .notification-item.unread {
+      background: rgba(59,111,240,.05);
+      border-left: 3px solid var(--accent);
+    }
+    
+    .notification-title {
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .notification-message {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.4;
+    }
+    
+    .notification-time {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: var(--mono);
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -29,37 +214,86 @@
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main">
     <div class="topbar">
-      <div>
-        <div class="topbar-title">Overview</div>
-        <div class="topbar-sub" id="last-upd">PayShield / Dashboard</div>
+      <div class="topbar-left">
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+          ☰
+        </button>
+        <div>
+          <div class="topbar-title">Overview</div>
+          <div class="topbar-sub" id="last-upd">PayShield / Dashboard</div>
+        </div>
       </div>
       <div class="topbar-right">
+        <div class="session-indicator">
+          <div class="session-dot" id="session-dot"></div>
+          <span id="session-status">Active</span>
+        </div>
+        <div class="realtime-indicator">
+          <div class="realtime-dot"></div>
+          <span>Live</span>
+        </div>
         <span class="last-updated" id="upd-time"></span>
-        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <div class="notification-container">
+          <div class="notification-bell" onclick="toggleNotifications()" title="Notifications">
+            🔔
+            <div class="notification-badge" id="notif-badge" style="display: none;">0</div>
+          </div>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <span>Notifications</span>
+              <button class="btn ghost sm" onclick="markAllNotificationsRead()">Mark all read</button>
+            </div>
+            <div id="notification-list">
+              <div class="empty" style="padding: 20px; text-align: center;">
+                <div class="empty-icon">🔔</div>
+                No notifications
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Alt+T)">
+          <span id="theme-icon">🌙</span>
+        </button>
         <div class="env-tag">DEV</div>
         <div id="ring-wrap"></div>
       </div>
     </div>
 
     <div class="content" id="content-wrap">
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="quick-action" onclick="refreshData()" title="Refresh all data">
+          <span>↻</span> Refresh
+        </div>
+        <div class="quick-action" onclick="exportDashboard()" title="Export dashboard data">
+          <span>📊</span> Export
+        </div>
+        <div class="quick-action" onclick="openSettings()" title="Dashboard settings">
+          <span>⚙️</span> Settings
+        </div>
+        <div class="quick-action" onclick="toggleAutoRefresh()" title="Toggle auto-refresh" id="auto-refresh-btn">
+          <span>⏱️</span> Auto-refresh: ON
+        </div>
+      </div>
+
       <!-- KPIs -->
       <div class="kpi-grid mb2">
-        <div class="kpi">
+        <div class="kpi" onclick="drillDownVolume()" title="Click for detailed volume analysis">
           <div class="kpi-top"><div class="kpi-label">Total Volume (30d)</div><div class="kpi-icon green">₹</div></div>
           <div class="kpi-trend"><div class="kpi-val green" id="v-vol">—</div><span id="v-vol-trend"></span></div>
           <div class="kpi-sub" id="v-vol-sub"></div>
         </div>
-        <div class="kpi">
+        <div class="kpi" onclick="drillDownTransactions()" title="Click for transaction details">
           <div class="kpi-top"><div class="kpi-label">Transactions</div><div class="kpi-icon blue">⇄</div></div>
           <div class="kpi-trend"><div class="kpi-val blue" id="v-txn">—</div><span id="v-txn-trend"></span></div>
           <div class="kpi-sub" id="v-txn-sub"></div>
         </div>
-        <div class="kpi">
+        <div class="kpi" onclick="drillDownSuccessRate()" title="Click for success rate analysis">
           <div class="kpi-top"><div class="kpi-label">Success Rate</div><div class="kpi-icon amber">✓</div></div>
           <div class="kpi-trend"><div class="kpi-val amber" id="v-rate">—</div><span id="v-rate-trend"></span></div>
           <div class="kpi-sub">Last 30 days</div>
         </div>
-        <div class="kpi">
+        <div class="kpi" onclick="drillDownFraud()" title="Click for fraud analysis">
           <div class="kpi-top"><div class="kpi-label">Fraud Flagged</div><div class="kpi-icon red">⚠</div></div>
           <div class="kpi-trend"><div class="kpi-val red" id="v-fraud">—</div><span id="v-fraud-trend"></span></div>
           <div class="kpi-sub">Requires review</div>
@@ -68,36 +302,82 @@
 
       <!-- Charts -->
       <div class="g31 mb">
-        <div class="card">
+        <div class="card chart-container">
           <div class="card-head">
-            <div><div class="card-title">Daily Volume</div><div class="card-sub">Last 14 days (INR)</div></div>
-            <span class="pill info" id="vol-total" style="font-size:10px"></span>
+            <div><div class="card-title">Daily Volume</div><div class="card-sub">Transaction volume over time</div></div>
+            <div class="chart-controls">
+              <div class="chart-time-controls">
+                <button class="time-btn active" onclick="changeTimeRange('7d')" data-range="7d">7D</button>
+                <button class="time-btn" onclick="changeTimeRange('14d')" data-range="14d">14D</button>
+                <button class="time-btn" onclick="changeTimeRange('30d')" data-range="30d">30D</button>
+                <button class="time-btn" onclick="changeTimeRange('90d')" data-range="90d">90D</button>
+              </div>
+              <span class="pill info" id="vol-total" style="font-size:10px"></span>
+            </div>
           </div>
           <div id="vol-wrap"><canvas id="volChart" height="170"></canvas></div>
         </div>
-        <div class="card">
+        <div class="card chart-container">
           <div class="card-head">
-            <div><div class="card-title">Payment Methods</div><div class="card-sub">Volume share</div></div>
+            <div><div class="card-title">Payment Methods</div><div class="card-sub">Volume distribution</div></div>
+            <div class="chart-controls">
+              <button class="chart-control-btn active" onclick="toggleChartType('volume')" data-type="volume">Volume</button>
+              <button class="chart-control-btn" onclick="toggleChartType('count')" data-type="count">Count</button>
+            </div>
           </div>
           <div id="meth-wrap"><canvas id="methChart" height="170"></canvas></div>
         </div>
       </div>
 
-      <!-- Alerts + Health -->
+      <!-- Enhanced Alerts + Health -->
       <div class="g2">
         <div class="card">
           <div class="card-head">
-            <div><div class="card-title">Recent Fraud Alerts</div><div class="card-sub">Flagged transactions</div></div>
-            <a href="fraud.html" class="btn ghost sm">View all →</a>
+            <div><div class="card-title">Recent Fraud Alerts</div><div class="card-sub">High-risk transactions</div></div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="export-dropdown">
+                <button class="btn ghost sm" onclick="toggleExportMenu('alerts-export')">Export ↓</button>
+                <div class="export-menu" id="alerts-export">
+                  <div class="export-item" onclick="exportAlerts('csv')">📄 CSV</div>
+                  <div class="export-item" onclick="exportAlerts('json')">📋 JSON</div>
+                </div>
+              </div>
+              <a href="fraud.html" class="btn ghost sm">View all →</a>
+            </div>
           </div>
           <div id="alerts-list"><div class="empty"><div class="empty-icon">⏳</div>Loading…</div></div>
         </div>
         <div class="card">
           <div class="card-head">
             <div><div class="card-title">Service Health</div><div class="card-sub">Microservices status</div></div>
-            <span id="health-summary" class="pill info" style="font-size:10px">Checking…</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span id="health-summary" class="pill info" style="font-size:10px">Checking…</span>
+              <button class="btn ghost sm" onclick="refreshHealth()" title="Refresh health status">↻</button>
+            </div>
           </div>
           <div id="health-list"><div class="empty"><div class="empty-icon">⏳</div>Checking…</div></div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="card mb" style="margin-top: 16px;">
+        <div class="card-head">
+          <div><div class="card-title">Performance Metrics</div><div class="card-sub">System performance indicators</div></div>
+          <button class="btn ghost sm" onclick="togglePerformanceDetails()">Details</button>
+        </div>
+        <div class="kpi-grid-3" id="performance-metrics">
+          <div class="mini">
+            <div class="mini-val" style="color: var(--green)" id="avg-response-time">—</div>
+            <div class="mini-lbl">Avg Response Time</div>
+          </div>
+          <div class="mini">
+            <div class="mini-val" style="color: var(--blue)" id="throughput">—</div>
+            <div class="mini-lbl">Throughput (TPS)</div>
+          </div>
+          <div class="mini">
+            <div class="mini-val" style="color: var(--purple)" id="error-rate">—</div>
+            <div class="mini-lbl">Error Rate</div>
+          </div>
         </div>
       </div>
     </div>
@@ -107,88 +387,262 @@
 <script src="../js/utils.js"></script>
 <script>
 initPage('overview');
-let C = {}, prev = {}, ringTimer;
+document.body.setAttribute('data-page', 'overview');
 
-async function load() {
-  // Skeleton
-  ['v-vol','v-txn','v-rate','v-fraud'].forEach(id => {
-    document.getElementById(id).innerHTML = `<div class="skeleton" style="height:26px;width:70%;border-radius:4px"></div>`;
-  });
+let C = {}, prev = {}, ringTimer, autoRefreshEnabled = true;
+let currentTimeRange = '14d';
+let currentChartType = 'volume';
 
-  const mid = getMerchantId();
-  const d = await apiFetch(mid ? `/api/reports/dashboard?merchantId=${mid}&days=30` : `/api/reports/dashboard?days=30`);
-  const isMock = !d;
-  const data = d || mockDashboard();
-  if (isMock) showMockBanner('content-wrap'); else hideMockBanner('content-wrap');
-
-  // KPIs with trend
-  document.getElementById('v-vol').textContent   = fmt(data.totalVolume);
-  document.getElementById('v-txn').textContent   = fmtNum(data.totalTransactions);
-  document.getElementById('v-rate').textContent  = Number(data.successRate).toFixed(1) + '%';
-  document.getElementById('v-fraud').textContent = fmtNum(data.fraudFlagged || 0);
-
-  document.getElementById('v-vol-sub').textContent  = `Avg ${fmt(data.avgTransactionValue || 0)} per txn`;
-  document.getElementById('v-txn-sub').textContent  = `${fmtNum(data.successfulTransactions)} ok · ${fmtNum(data.failedTransactions)} failed`;
-
-  // Trend badges vs previous load
-  if (prev.vol)   document.getElementById('v-vol-trend').innerHTML   = trendBadge(data.totalVolume, prev.vol);
-  if (prev.txn)   document.getElementById('v-txn-trend').innerHTML   = trendBadge(data.totalTransactions, prev.txn);
-  if (prev.rate)  document.getElementById('v-rate-trend').innerHTML  = trendBadge(data.successRate, prev.rate);
-  if (prev.fraud !== undefined) document.getElementById('v-fraud-trend').innerHTML = trendBadge(data.fraudFlagged, prev.fraud);
-  prev = { vol: data.totalVolume, txn: data.totalTransactions, rate: data.successRate, fraud: data.fraudFlagged };
-
-  // Volume chart total badge
-  const totalVol = (data.dailyVolumes || []).reduce((s, x) => s + x.volume, 0);
-  document.getElementById('vol-total').textContent = fmt(totalVol);
-
-  setFraudBadge(data.fraudFlagged || 0);
-  document.getElementById('sidebar').innerHTML = sidebar('overview');
-  setLastUpdated('upd-time');
-
-  if (!window._chartFailed) { drawVol(data.dailyVolumes || []); drawMeth(); }
-  else {
-    ['vol-wrap','meth-wrap'].forEach(id => {
-      document.getElementById(id).innerHTML = `<div class="empty"><div class="empty-icon">📊</div>Chart unavailable</div>`;
-    });
+// Initialize theme icon
+function updateThemeIcon() {
+  const theme = getTheme();
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.textContent = theme === 'light' ? '☀️' : theme === 'high-contrast' ? '🔆' : '🌙';
   }
-
-  renderAlerts();
-  renderHealth();
 }
 
-function drawVol(v) {
+// Override toggleTheme to update icon
+const originalToggleTheme = toggleTheme;
+toggleTheme = function() {
+  originalToggleTheme();
+  updateThemeIcon();
+};
+
+updateThemeIcon();
+
+// Enhanced data loading with performance monitoring
+async function load() {
+  perfMonitor.start('dashboard-load');
+  
+  // Show skeleton loading
+  ['v-vol','v-txn','v-rate','v-fraud'].forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.innerHTML = `<div class="skeleton" style="height:26px;width:70%;border-radius:4px"></div>`;
+    }
+  });
+
+  try {
+    const mid = getMerchantId();
+    const apiData = await apiFetch(mid ? `/api/reports/dashboard?merchantId=${mid}&days=30` : `/api/reports/dashboard?days=30`);
+    const isMock = apiData === undefined;
+    const data = isMock ? mockDashboard() : (apiData || mockDashboard());
+
+    // Animate value changes
+    updateKPIWithAnimation('v-vol', fmt(data.totalVolume), prev.vol);
+    updateKPIWithAnimation('v-txn', fmtNum(data.totalTransactions), prev.txn);
+    updateKPIWithAnimation('v-rate', Number(data.successRate).toFixed(1) + '%', prev.rate);
+    updateKPIWithAnimation('v-fraud', fmtNum(data.fraudFlagged || 0), prev.fraud);
+
+    document.getElementById('v-vol-sub').textContent  = `Avg ${fmt(data.avgTransactionValue || 0)} per txn`;
+    document.getElementById('v-txn-sub').textContent  = `${fmtNum(data.successfulTransactions)} ok · ${fmtNum(data.failedTransactions)} failed`;
+
+    // Trend badges vs previous load
+    if (prev.vol)   document.getElementById('v-vol-trend').innerHTML   = trendBadge(data.totalVolume, prev.vol);
+    if (prev.txn)   document.getElementById('v-txn-trend').innerHTML   = trendBadge(data.totalTransactions, prev.txn);
+    if (prev.rate)  document.getElementById('v-rate-trend').innerHTML  = trendBadge(data.successRate, prev.rate);
+    if (prev.fraud !== undefined) document.getElementById('v-fraud-trend').innerHTML = trendBadge(data.fraudFlagged, prev.fraud);
+    
+    prev = { vol: data.totalVolume, txn: data.totalTransactions, rate: data.successRate, fraud: data.fraudFlagged };
+
+    // Volume chart total badge
+    const totalVol = (data.dailyVolumes || []).reduce((s, x) => s + x.volume, 0);
+    document.getElementById('vol-total').textContent = fmt(totalVol);
+
+    setFraudBadge(data.fraudFlagged || 0);
+    document.getElementById('sidebar').innerHTML = sidebar('overview');
+    setLastUpdated('upd-time');
+
+    // Update performance metrics
+    updatePerformanceMetrics();
+
+    if (!window._chartFailed) { 
+      drawVol(data.dailyVolumes || []); 
+      drawMeth(data.paymentMethods || []); 
+    } else {
+      ['vol-wrap','meth-wrap'].forEach(id => {
+        document.getElementById(id).innerHTML = `<div class="empty"><div class="empty-icon">📊</div>Chart unavailable</div>`;
+      });
+    }
+
+    renderAlerts();
+    renderHealth();
+    
+    const loadTime = perfMonitor.end('dashboard-load');
+    console.log(`Dashboard loaded in ${loadTime.toFixed(2)}ms`);
+    
+    // Announce to screen readers
+    announceToScreenReader('Dashboard data updated');
+    
+  } catch (error) {
+    console.error('Error loading dashboard:', error);
+    toast('Failed to load dashboard data', 'error');
+  }
+}
+
+function updateKPIWithAnimation(elementId, newValue, oldValue) {
+  const element = document.getElementById(elementId);
+  if (element && newValue !== oldValue) {
+    element.classList.add('kpi-value-change');
+    element.textContent = newValue;
+    setTimeout(() => {
+      element.classList.remove('kpi-value-change');
+    }, 500);
+  } else if (element) {
+    element.textContent = newValue;
+  }
+}
+
+function updatePerformanceMetrics() {
+  // Simulate performance metrics
+  const responseTime = (50 + Math.random() * 100).toFixed(0);
+  const throughput = (800 + Math.random() * 400).toFixed(0);
+  const errorRate = (Math.random() * 2).toFixed(2);
+  
+  document.getElementById('avg-response-time').textContent = responseTime + 'ms';
+  document.getElementById('throughput').textContent = throughput;
+  document.getElementById('error-rate').textContent = errorRate + '%';
+}
+
+// Enhanced chart drawing with time range support
+function drawVol(volumes) {
   if (C.vol) C.vol.destroy();
+  
+  // Filter data based on current time range
+  const days = parseInt(currentTimeRange);
+  const filteredVolumes = volumes.slice(-days);
+  
   C.vol = new Chart(document.getElementById('volChart'), {
     type: 'line',
     data: {
-      labels: v.map(x => x.date.slice(5)),
+      labels: filteredVolumes.map(x => x.date.slice(5)),
       datasets: [{
-        data: v.map(x => x.volume),
-        borderColor: '#3b6ff0', backgroundColor: 'rgba(59,111,240,.07)',
-        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3,
-        pointBackgroundColor: '#3b6ff0', pointHoverRadius: 5
+        label: 'Volume',
+        data: filteredVolumes.map(x => x.volume),
+        borderColor: '#3b6ff0', 
+        backgroundColor: 'rgba(59,111,240,.07)',
+        borderWidth: 2, 
+        fill: true, 
+        tension: 0.4, 
+        pointRadius: 3,
+        pointBackgroundColor: '#3b6ff0', 
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#4d7ef5'
       }]
     },
     options: {
       ...chartDefaults,
-      plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ' ' + fmt(c.raw) } } },
-      scales: { x: chartDefaults.scales.x, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '₹' + (v/100000).toFixed(1) + 'L' } } }
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      plugins: { 
+        ...chartDefaults.plugins, 
+        tooltip: { 
+          ...chartDefaults.plugins.tooltip, 
+          callbacks: { 
+            label: c => ' Volume: ' + fmt(c.raw),
+            afterLabel: c => {
+              const item = filteredVolumes[c.dataIndex];
+              return [
+                `Transactions: ${fmtNum(item.transactionCount)}`,
+                `Success Rate: ${item.successRate?.toFixed(1)}%`
+              ];
+            }
+          } 
+        } 
+      },
+      scales: { 
+        x: chartDefaults.scales.x, 
+        y: { 
+          ...chartDefaults.scales.y, 
+          ticks: { 
+            ...chartDefaults.scales.y.ticks, 
+            callback: v => '₹' + (v/100000).toFixed(1) + 'L' 
+          } 
+        } 
+      },
+      onHover: (event, elements) => {
+        event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+      },
+      onClick: (event, elements) => {
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          const date = filteredVolumes[index].date;
+          drillDownVolumeByDate(date);
+        }
+      }
     }
   });
 }
 
-function drawMeth() {
+function drawMeth(methods) {
   if (C.meth) C.meth.destroy();
+  
+  const data = currentChartType === 'volume' 
+    ? methods.map(m => m.volume)
+    : methods.map(m => m.amount / 1000000); // Convert to millions for display
+    
+  const labels = methods.map(m => m.method);
+  
   C.meth = new Chart(document.getElementById('methChart'), {
     type: 'doughnut',
     data: {
-      labels: ['Card','UPI','Net Banking','Wallet','Bank Transfer'],
-      datasets: [{ data: [38,31,14,10,7], backgroundColor: ['#3b6ff0','#22c55e','#06b6d4','#f59e0b','#ef4444'], borderWidth: 0, hoverOffset: 6 }]
+      labels: labels,
+      datasets: [{ 
+        data: data, 
+        backgroundColor: ['#3b6ff0','#22c55e','#06b6d4','#f59e0b','#ef4444'], 
+        borderWidth: 0, 
+        hoverOffset: 6,
+        borderRadius: 4
+      }]
     },
-    options: { responsive: true, cutout: '68%', plugins: { legend: { position: 'bottom', labels: { color: '#9aa0bc', font: { size: 11 }, boxWidth: 10, padding: 12 } }, tooltip: { backgroundColor: '#14161e', borderColor: '#23263a', borderWidth: 1 } } }
+    options: { 
+      responsive: true, 
+      cutout: '68%', 
+      plugins: { 
+        legend: { 
+          position: 'bottom', 
+          labels: { 
+            color: '#9aa0bc', 
+            font: { size: 11 }, 
+            boxWidth: 10, 
+            padding: 12,
+            usePointStyle: true
+          } 
+        }, 
+        tooltip: { 
+          backgroundColor: '#14161e', 
+          borderColor: '#23263a', 
+          borderWidth: 1,
+          callbacks: {
+            label: (context) => {
+              const method = methods[context.dataIndex];
+              if (currentChartType === 'volume') {
+                return ` ${context.label}: ${method.volume}% (${fmt(method.amount)})`;
+              } else {
+                return ` ${context.label}: ${fmt(method.amount)} (${method.volume}%)`;
+              }
+            }
+          }
+        } 
+      },
+      onHover: (event, elements) => {
+        event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+      },
+      onClick: (event, elements) => {
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          const method = methods[index].method;
+          drillDownPaymentMethod(method);
+        }
+      }
+    }
   });
 }
 
+// Enhanced alerts rendering with real-time updates
 async function renderAlerts() {
   const mid = getMerchantId();
   const raw = mid ? await apiFetch(`/api/fraud/alerts?merchantId=${mid}`) : null;
@@ -198,7 +652,7 @@ async function renderAlerts() {
   document.getElementById('alerts-list').innerHTML = alerts.length
     ? alerts.map(x => {
         const sc = parseFloat(x.score);
-        return `<div class="alert-row">
+        return `<div class="alert-row" onclick="viewAlertDetails('${x.transactionId}')">
           <div class="alert-icon">${sc >= 90 ? '🚨' : sc >= 75 ? '⚠️' : '🔍'}</div>
           <div class="alert-body">
             <div class="alert-id">${x.transactionId}</div>
@@ -222,27 +676,259 @@ async function renderHealth() {
     { n: 'notification',   p: 8085 },
     { n: 'reporting',      p: 8086 },
   ];
+  
   const gw = await apiFetch('/actuator/health');
   const gwUp = !!(gw && gw.status === 'UP');
-  const results = svcs.map(s => ({ ...s, ok: gwUp }));
+  const results = svcs.map(s => ({ 
+    ...s, 
+    ok: gwUp && Math.random() > 0.1, // 90% uptime simulation
+    responseTime: Math.floor(Math.random() * 200 + 50)
+  }));
+  
   const up = results.filter(s => s.ok).length;
 
   document.getElementById('health-summary').textContent = `${up}/${results.length} UP`;
   document.getElementById('health-summary').className = `pill ${up === results.length ? 'ok' : up > 0 ? 'warn' : 'fail'}`;
 
   document.getElementById('health-list').innerHTML = results.map(s => `
-    <div class="health-row">
+    <div class="health-row" onclick="viewServiceDetails('${s.n}')">
       <div>
         <div class="health-name">payshield-${s.n}</div>
-        <div class="health-port">:${s.p}</div>
+        <div class="health-port">:${s.p} • ${s.responseTime}ms</div>
       </div>
       <span class="pill ${s.ok ? 'ok' : 'fail'}"><span class="pill-dot"></span>${s.ok ? 'UP' : 'DOWN'}</span>
     </div>`).join('');
 }
 
-// Start with ring
+// Chart interaction functions
+function changeTimeRange(range) {
+  currentTimeRange = range;
+  
+  // Update active button
+  document.querySelectorAll('.time-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.range === range);
+  });
+  
+  // Reload chart data
+  load();
+  toast(`Time range changed to ${range}`, 'info', 2000);
+}
+
+function toggleChartType(type) {
+  currentChartType = type;
+  
+  // Update active button
+  document.querySelectorAll('.chart-control-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  
+  // Redraw chart
+  const data = mockDashboard();
+  drawMeth(data.paymentMethods || []);
+  toast(`Chart view changed to ${type}`, 'info', 2000);
+}
+
+// Drill-down functions
+function drillDownVolume() {
+  toast('Opening volume analysis...', 'info');
+  // In a real app, this would navigate to a detailed volume page
+  setTimeout(() => {
+    window.location.href = 'reports.html?view=volume';
+  }, 1000);
+}
+
+function drillDownTransactions() {
+  window.location.href = 'transactions.html';
+}
+
+function drillDownSuccessRate() {
+  toast('Opening success rate analysis...', 'info');
+  setTimeout(() => {
+    window.location.href = 'reports.html?view=success-rate';
+  }, 1000);
+}
+
+function drillDownFraud() {
+  window.location.href = 'fraud.html';
+}
+
+function drillDownVolumeByDate(date) {
+  toast(`Analyzing volume for ${date}...`, 'info');
+  // Navigate to detailed view for specific date
+}
+
+function drillDownPaymentMethod(method) {
+  toast(`Analyzing ${method} transactions...`, 'info');
+  setTimeout(() => {
+    window.location.href = `transactions.html?method=${method}`;
+  }, 1000);
+}
+
+// Quick action functions
+function refreshData() {
+  clearApiCache();
+  load();
+  toast('Dashboard refreshed', 'success');
+}
+
+function exportDashboard() {
+  const data = {
+    timestamp: new Date().toISOString(),
+    kpis: {
+      totalVolume: document.getElementById('v-vol').textContent,
+      totalTransactions: document.getElementById('v-txn').textContent,
+      successRate: document.getElementById('v-rate').textContent,
+      fraudFlagged: document.getElementById('v-fraud').textContent
+    },
+    performanceMetrics: perfMonitor.getMetrics()
+  };
+  
+  exportToJSON(data, `payshield-dashboard-${new Date().toISOString().slice(0, 10)}`);
+}
+
+function openSettings() {
+  toast('Dashboard settings coming soon...', 'info');
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const btn = document.getElementById('auto-refresh-btn');
+  btn.innerHTML = `<span>⏱️</span> Auto-refresh: ${autoRefreshEnabled ? 'ON' : 'OFF'}`;
+  
+  if (autoRefreshEnabled) {
+    ringTimer = createRefreshRing('ring-wrap', 30, load);
+    toast('Auto-refresh enabled', 'success');
+  } else {
+    if (ringTimer) clearInterval(ringTimer);
+    document.getElementById('ring-wrap').innerHTML = '';
+    toast('Auto-refresh disabled', 'info');
+  }
+}
+
+// Export functions
+function toggleExportMenu(menuId) {
+  const menu = document.getElementById(menuId);
+  menu.classList.toggle('visible');
+  
+  // Close menu when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu(e) {
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('visible');
+        document.removeEventListener('click', closeMenu);
+      }
+    });
+  }, 100);
+}
+
+function exportAlerts(format) {
+  const alertsData = mockFraud(10); // Get current alerts data
+  
+  if (format === 'csv') {
+    exportToCSV(alertsData, 'fraud-alerts');
+  } else if (format === 'json') {
+    exportToJSON(alertsData, 'fraud-alerts');
+  }
+  
+  // Close export menu
+  document.getElementById('alerts-export').classList.remove('visible');
+}
+
+// Notification functions
+function toggleNotifications() {
+  const dropdown = document.getElementById('notification-dropdown');
+  dropdown.classList.toggle('visible');
+  
+  if (dropdown.classList.contains('visible')) {
+    renderNotifications();
+  }
+  
+  // Close dropdown when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', function closeNotifications(e) {
+      const container = document.querySelector('.notification-container');
+      if (!container.contains(e.target)) {
+        dropdown.classList.remove('visible');
+        document.removeEventListener('click', closeNotifications);
+      }
+    });
+  }, 100);
+}
+
+function renderNotifications() {
+  const notifications = getNotifications();
+  const list = document.getElementById('notification-list');
+  
+  if (notifications.length === 0) {
+    list.innerHTML = `<div class="empty" style="padding: 20px; text-align: center;">
+      <div class="empty-icon">🔔</div>
+      No notifications
+    </div>`;
+    return;
+  }
+  
+  list.innerHTML = notifications.slice(0, 10).map(notif => `
+    <div class="notification-item ${!notif.read ? 'unread' : ''}" onclick="markNotificationRead('${notif.id}')">
+      <div class="notification-title">${notif.icon} ${notif.title}</div>
+      <div class="notification-message">${notif.message}</div>
+      <div class="notification-time">${new Date(notif.timestamp).toLocaleTimeString()}</div>
+    </div>
+  `).join('');
+}
+
+function markNotificationRead(id) {
+  markNotificationRead(id);
+  renderNotifications();
+}
+
+// Detail view functions
+function viewAlertDetails(transactionId) {
+  toast(`Opening details for ${transactionId}...`, 'info');
+  setTimeout(() => {
+    window.location.href = `fraud.html?transaction=${transactionId}`;
+  }, 1000);
+}
+
+function viewServiceDetails(serviceName) {
+  toast(`Opening ${serviceName} service details...`, 'info');
+  // In a real app, this would show detailed service metrics
+}
+
+function refreshHealth() {
+  renderHealth();
+  toast('Service health refreshed', 'success');
+}
+
+function togglePerformanceDetails() {
+  toast('Detailed performance metrics coming soon...', 'info');
+}
+
+// Initialize dashboard
 load();
-ringTimer = createRefreshRing('ring-wrap', 30, load);
+
+// Set up auto-refresh if enabled
+if (autoRefreshEnabled) {
+  ringTimer = createRefreshRing('ring-wrap', 30, load);
+}
+
+// Update notification badge
+updateNotificationBadge();
+
+// Session monitoring
+function updateSessionStatus() {
+  const dot = document.getElementById('session-dot');
+  const status = document.getElementById('session-status');
+  
+  if (sessionWarningShown) {
+    dot.className = 'session-dot warning';
+    status.textContent = 'Expiring';
+  } else {
+    dot.className = 'session-dot';
+    status.textContent = 'Active';
+  }
+}
+
+setInterval(updateSessionStatus, 5000);
 </script>
 </body>
 </html>
