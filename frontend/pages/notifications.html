@@ -64,11 +64,26 @@ function mockNotifs(){
   return Array.from({length:20},(_,i)=>{const x=t[i%t.length];return{id:i+1,...x,read:i>5,createdAt:new Date(Date.now()-i*3200000).toISOString()};});
 }
 
-function load(){
-  all=mockNotifs();
-  document.getElementById('n-tot').textContent=all.length;
-  document.getElementById('n-unread').textContent=all.filter(n=>!n.read).length;
-  document.getElementById('n-fraud').textContent=all.filter(n=>n.type==='fraud').length;
+async function load(){
+  const raw = await apiFetch('/api/notifications');
+  if (raw && (raw.content || Array.isArray(raw))) {
+    const apiData = raw.content || raw;
+    all = apiData.map((n, i) => ({
+      id: n.id || i,
+      icon: n.type === 'FRAUD_ALERT' ? '🚨' : n.type === 'EMAIL' ? '📧' : '🔔',
+      type: n.type === 'FRAUD_ALERT' ? 'fraud' : n.type === 'EMAIL' ? 'payment' : 'system',
+      cls:  n.status === 'SENT' ? 'ok' : n.status === 'FAILED' ? 'err' : 'info',
+      title: n.subject || 'Notification',
+      msg:   n.body ? n.body.replace(/<[^>]*>/g, '').slice(0, 120) : '',
+      read:  n.status === 'SENT',
+      createdAt: n.sentAt || n.createdAt || new Date().toISOString()
+    }));
+  } else {
+    all = mockNotifs();
+  }
+  document.getElementById('n-tot').textContent    = all.length;
+  document.getElementById('n-unread').textContent = all.filter(n=>!n.read).length;
+  document.getElementById('n-fraud').textContent  = all.filter(n=>n.type==='fraud').length;
   render();
 }
 

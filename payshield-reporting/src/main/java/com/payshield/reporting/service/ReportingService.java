@@ -79,7 +79,7 @@ public class ReportingService {
      * Cache is evicted so next read reflects fresh data.
      */
     @Transactional
-    @CacheEvict(value = {"dashboard", "payment-method-stats"}, key = "#merchantId + '_*'", allEntries = true)
+    @CacheEvict(value = {"dashboard", "payment-method-stats"}, allEntries = true)
     public void upsertDailySummary(UUID merchantId, LocalDate date,
                                    boolean success, boolean failed, boolean fraud,
                                    BigDecimal amount, String paymentMethod) {

@@ -105,7 +105,6 @@ public class AuthService {
     @Scheduled(fixedRate = 6 * 60 * 60 * 1000)
     @Transactional
     public void cleanupExpiredTokens() {
-        int deleted = 0;
         try {
             refreshTokenRepository.deleteExpiredTokens(LocalDateTime.now());
             log.debug("Cleaned up expired refresh tokens");

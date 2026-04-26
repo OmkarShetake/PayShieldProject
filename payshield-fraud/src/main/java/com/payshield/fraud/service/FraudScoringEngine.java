@@ -41,7 +41,6 @@ public class FraudScoringEngine {
     @Value("${ai.scorer.url}")
     private String aiScorerUrl;
 
-    @Transactional
     public FraudCheckResult evaluateTransaction(FraudCheckRequest request) {
         log.info("Evaluating fraud for transaction: {}", request.getTransactionId());
 
@@ -105,7 +104,8 @@ public class FraudScoringEngine {
             }
         }
 
-        // AI model score (call Python FastAPI service)
+        // AI model score — called BEFORE opening DB transaction to avoid holding
+        // a connection open during an external HTTP call (5s timeout risk)
         double aiScore = getAiScore(request, features);
         features.put("ai_score", aiScore);
         // Blend: 60% rules, 40% AI
@@ -116,6 +116,25 @@ public class FraudScoringEngine {
         boolean flagged = totalScore >= flagScoreThreshold;
         String decision = totalScore >= 90 ? "REJECT" : flagged ? "FLAG" : "APPROVE";
 
+        log.info("Fraud evaluation complete: txn={} score={} decision={} rules={}",
+                request.getTransactionId(), finalScore, decision, triggeredRules);
+
+        // Persist result in its own short-lived transaction
+        persistFraudScore(request, finalScore, flagged, features, triggeredRules, decision);
+
+        return FraudCheckResult.builder()
+                .transactionId(request.getTransactionId())
+                .score(finalScore)
+                .flagged(flagged)
+                .decision(decision)
+                .triggeredRules(triggeredRules)
+                .build();
+    }
+
+    @Transactional
+    void persistFraudScore(FraudCheckRequest request, BigDecimal finalScore,
+                                   boolean flagged, Map<String, Object> features,
+                                   List<String> triggeredRules, String decision) {
         FraudScore fraudScore = FraudScore.builder()
                 .transactionId(request.getTransactionId())
                 .merchantId(request.getMerchantId())
@@ -125,19 +144,7 @@ public class FraudScoringEngine {
                 .ruleTriggers(triggeredRules)
                 .decision(decision)
                 .build();
-
         fraudScoreRepository.save(fraudScore);
-
-        log.info("Fraud evaluation complete: txn={} score={} decision={} rules={}",
-                request.getTransactionId(), finalScore, decision, triggeredRules);
-
-        return FraudCheckResult.builder()
-                .transactionId(request.getTransactionId())
-                .score(finalScore)
-                .flagged(flagged)
-                .decision(decision)
-                .triggeredRules(triggeredRules)
-                .build();
     }
 
     private double getAiScore(FraudCheckRequest request, Map<String, Object> features) {

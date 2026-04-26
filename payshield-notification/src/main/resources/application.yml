@@ -51,6 +51,20 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  health:
+    mail:
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /api/notification-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
 
 logging:
   level:

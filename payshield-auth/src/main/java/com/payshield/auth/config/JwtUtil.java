@@ -32,6 +32,10 @@ public class JwtUtil {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
+        // Cast to User entity to include the UUID — used by gateway to forward X-Merchant-Id
+        if (userDetails instanceof com.payshield.auth.entity.User user) {
+            claims.put("userId", user.getId().toString());
+        }
         return createToken(claims, userDetails.getUsername());
     }
 

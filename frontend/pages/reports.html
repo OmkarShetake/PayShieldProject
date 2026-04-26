@@ -4,7 +4,8 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PayShield — Reports</title>
   <link rel="stylesheet" href="../css/global.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+          onerror="window._chartFailed=true"></script>
 </head>
 <body>
 <div class="shell">
@@ -57,9 +58,18 @@ initPage('reports');
 let C={};
 
 async function load(){
+  if (window._chartFailed) {
+    document.querySelectorAll('canvas').forEach(c => {
+      c.parentElement.innerHTML = `<div class="empty"><div class="empty-icon">📊</div>Chart unavailable (offline)</div>`;
+    });
+  }
   Object.values(C).forEach(c=>c?.destroy()); C={};
-  const days=document.getElementById('period').value;
-  let d=await apiFetch(`/api/reports/dashboard?merchantId=${MERCHANT_ID}&days=${days}`)||mockDashboard();
+  const days = document.getElementById('period').value;
+  const mid  = getMerchantId();
+  const endpoint = mid
+    ? `/api/reports/dashboard?merchantId=${mid}&days=${days}`
+    : `/api/reports/dashboard?days=${days}`;
+  let d = await apiFetch(endpoint) || mockDashboard();
   document.getElementById('r-rev').textContent=fmt(d.totalVolume);
   document.getElementById('r-rev-sub').textContent=`Avg ${fmt(d.avgTransactionValue||0)} per txn`;
   document.getElementById('r-txn').textContent=fmtNum(d.totalTransactions);
@@ -93,15 +103,26 @@ function mkDoughnut(id,labels,data,colors){
 }
 
 function renderMeth(){
-  const rows=[
-    {n:'UPI',t:3860,v:14200000,s:97.2,sh:31},{n:'Card',t:4738,v:17200000,s:94.1,sh:38},
-    {n:'Net Banking',t:1745,v:6350000,s:92.8,sh:14},{n:'Wallet',t:1247,v:4540000,s:96.5,sh:10},{n:'Bank Transfer',t:875,v:3180000,s:91.3,sh:7}
-  ];
-  document.getElementById('meth-tbody').innerHTML=rows.map(r=>`<tr>
-    <td><strong>${r.n}</strong></td><td>${fmtNum(r.t)}</td><td>${fmt(r.v)}</td><td>${fmt(Math.floor(r.v/r.t))}</td>
-    <td><span style="color:${r.s>=95?'var(--green)':r.s>=92?'var(--amber)':'var(--red)'};font-weight:600">${r.s}%</span></td>
-    <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${r.sh}%;background:var(--accent);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${r.sh}%</span></div></td>
-  </tr>`).join('');
+  const mid = getMerchantId();
+  apiFetch(mid ? `/api/reports/payment-methods?merchantId=${mid}` : '/api/reports/payment-methods').then(apiRows => {
+    const rows = (apiRows && apiRows.length)
+      ? apiRows
+      : [
+          {n:'UPI',        t:3860, v:14200000, s:97.2, sh:31},
+          {n:'Card',       t:4738, v:17200000, s:94.1, sh:38},
+          {n:'Net Banking',t:1745, v:6350000,  s:92.8, sh:14},
+          {n:'Wallet',     t:1247, v:4540000,  s:96.5, sh:10},
+          {n:'Bank Transfer',t:875,v:3180000,  s:91.3, sh:7}
+        ];
+    document.getElementById('meth-tbody').innerHTML = rows.map(r => `<tr>
+      <td><strong>${r.n || r.paymentMethod}</strong></td>
+      <td>${fmtNum(r.t || r.count)}</td>
+      <td>${fmt(r.v || r.volume)}</td>
+      <td>${fmt(Math.floor((r.v || r.volume) / (r.t || r.count)))}</td>
+      <td><span style="color:${(r.s||r.successRate)>=95?'var(--green)':(r.s||r.successRate)>=92?'var(--amber)':'var(--red)'};font-weight:600">${(r.s||r.successRate||0).toFixed ? (r.s||r.successRate).toFixed(1) : r.s||r.successRate}%</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${r.sh||r.share||0}%;background:var(--accent);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${r.sh||r.share||0}%</span></div></td>
+    </tr>`).join('');
+  });
 }
 
 load();

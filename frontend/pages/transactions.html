@@ -90,7 +90,9 @@ initPage('transactions');
 let all=[], filtered=[], page=0, ps=12;
 
 async function load() {
-  const d = await apiFetch('/api/payments?size=50') || {content: mockTransactions(40)};
+  const mid = getMerchantId();
+  const endpoint = mid ? `/api/payments?size=50&merchantId=${mid}` : '/api/payments?size=50';
+  const d = await apiFetch(endpoint) || { content: mockTransactions(40) };
   all = d.content || d;
   document.getElementById('s-all').textContent  = all.length;
   document.getElementById('s-ok').textContent   = all.filter(t=>t.status==='COMPLETED').length;

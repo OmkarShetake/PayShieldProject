@@ -53,9 +53,12 @@
 <script src="../js/utils.js"></script>
 <script>
 initPage('reconciliation');
-let runs=[];
-const today=new Date().toISOString().slice(0,10), last7=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
-document.getElementById('r-from').value=last7; document.getElementById('r-to').value=today;
+let runs = JSON.parse(localStorage.getItem('ps_recon_runs') || '[]');
+const today   = new Date().toISOString().slice(0,10);
+const last7   = new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+document.getElementById('r-from').value = last7;
+document.getElementById('r-to').value   = today;
+kpis(); renderTable();
 
 function kpis(){
   document.getElementById('r-runs').textContent=runs.length;
@@ -69,10 +72,20 @@ async function run(){
   const from=document.getElementById('r-from').value, to=document.getElementById('r-to').value;
   if(!from||!to) return;
   const btn=document.getElementById('run-btn'); btn.disabled=true; btn.textContent='Running…';
-  const d=await apiFetch('/api/reconciliation/run',{method:'POST',body:JSON.stringify({merchantId:MERCHANT_ID,fromDate:from+'T00:00:00',toDate:to+'T23:59:59',triggeredBy:getEmail()})});
+  const d = await apiFetch('/api/reconciliation/run', {
+    method: 'POST',
+    body: JSON.stringify({
+      merchantId: getMerchantId() || '00000000-0000-0000-0000-000000000001',
+      fromDate: from + 'T00:00:00',
+      toDate:   to   + 'T23:59:59',
+      triggeredBy: getEmail()
+    })
+  });
   const r=d||{id:'RUN-'+Math.random().toString(36).slice(2,8).toUpperCase(), status:'COMPLETED', totalTxns:Math.floor(Math.random()*300+100), matched:0, mismatched:0, fromDate:from, toDate:to, createdAt:new Date().toISOString()};
   r.matched=r.matched||Math.floor(r.totalTxns*.94); r.mismatched=r.mismatched||Math.floor(r.totalTxns*.06); r.matchRate=r.matchRate||(r.matched/r.totalTxns*100).toFixed(1);
-  runs.unshift(r); kpis(); renderTable();
+  runs.unshift(r);
+  localStorage.setItem('ps_recon_runs', JSON.stringify(runs.slice(0, 50)));
+  kpis(); renderTable();
   const el=document.getElementById('run-result');
   el.className='result-row';
   el.innerHTML=`<div><div class="result-num" style="color:var(--green)">${r.matched}</div><div class="result-lbl">Matched</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--amber)">${r.mismatched}</div><div class="result-lbl">Mismatch</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--text)">${r.matchRate}%</div><div class="result-lbl">Match Rate</div></div><div style="margin-left:auto;font-size:13px;color:var(--text2)">✓ Run complete for ${from} → ${to}</div>`;

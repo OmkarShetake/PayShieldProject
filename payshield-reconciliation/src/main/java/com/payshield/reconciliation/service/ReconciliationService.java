@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,10 +86,6 @@ public class ReconciliationService {
 
     private List<ReconRecord> performMatching(List<Settlement> settlements, ReconRun run) {
         List<ReconRecord> records = new ArrayList<>();
-
-        // Build map of settlements by bank_ref for O(1) lookup
-        Map<String, Settlement> settlementMap = settlements.stream()
-                .collect(Collectors.toMap(Settlement::getBankRef, s -> s));
 
         // For each settlement, try to find matching transaction
         for (Settlement settlement : settlements) {

@@ -57,13 +57,15 @@ public class AuthDTOs {
         private String email;
         private String fullName;
         private User.Role role;
+        private UUID merchantId; // mirrors user id for merchant lookup across services
 
         public static UserResponse from(User user) {
             UserResponse r = new UserResponse();
-            r.id = user.getId();
-            r.email = user.getEmail();
-            r.fullName = user.getFullName();
-            r.role = user.getRole();
+            r.id         = user.getId();
+            r.email      = user.getEmail();
+            r.fullName   = user.getFullName();
+            r.role       = user.getRole();
+            r.merchantId = user.getId(); // user UUID doubles as merchantId in demo
             return r;
         }
     }

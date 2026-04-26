@@ -41,17 +41,12 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/refresh",
-
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api/report-docs/**",
-
                                 "/actuator/**"
                         ).permitAll()
-
-                        // ✅ Actuator
-                        .requestMatchers("/actuator/**").permitAll()
 
                         // 🔒 Secure others
                         .anyRequest().authenticated()

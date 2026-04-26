@@ -165,15 +165,10 @@
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      saveAuth(data.accessToken, data.user?.email || email);
+      saveAuth(data.accessToken, data.user?.email || email, data.user?.merchantId || data.user?.id || '');
       window.location.href = 'pages/overview.html';
     } catch {
-      if (email === 'admin@payshield.com' && pass === 'Admin@123') {
-        saveAuth('demo-token', email);
-        window.location.href = 'pages/overview.html';
-      } else {
-        showErr('Wrong email or password');
-      }
+      showErr('Wrong email or password');
     }
   }
 

@@ -4,7 +4,8 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PayShield — Fraud Alerts</title>
   <link rel="stylesheet" href="../css/global.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+          onerror="window._chartFailed=true"></script>
   <style>
     .rule-tag{display:inline-block;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:4px;padding:1px 7px;font-size:10px;font-family:var(--mono);color:var(--red);margin:2px}
     .risk-wrap{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:60px}
@@ -58,16 +59,27 @@ initPage('fraud');
 let chart;
 
 async function load() {
-  const d = await apiFetch('/api/fraud/alerts?size=20') || {content: mockFraud(12)};
-  const data = d.content || d;
+  const mid = getMerchantId();
+  const endpoint = mid ? `/api/fraud/alerts?merchantId=${mid}` : '/api/fraud/alerts';
+  const raw = await apiFetch(endpoint);
+  const data = (raw && (raw.content || raw)) || mockFraud(12);
 
-  document.getElementById('k-hi').textContent  = data.filter(a=>parseFloat(a.score)>=75).length;
-  document.getElementById('k-med').textContent = data.filter(a=>parseFloat(a.score)>=50&&parseFloat(a.score)<75).length;
-  document.getElementById('k-avg').textContent = data.length ? (data.reduce((s,a)=>s+parseFloat(a.score),0)/data.length).toFixed(1) : '—';
+  document.getElementById('k-hi').textContent  = data.filter(a => parseFloat(a.score) >= 75).length;
+  document.getElementById('k-med').textContent = data.filter(a => parseFloat(a.score) >= 50 && parseFloat(a.score) < 75).length;
+  document.getElementById('k-avg').textContent = data.length ? (data.reduce((s, a) => s + parseFloat(a.score), 0) / data.length).toFixed(1) : '—';
   document.getElementById('flag-count').textContent = `${data.length} flagged`;
 
-  drawDist(data);
-  renderTop(data.sort((a,b)=>parseFloat(b.score)-parseFloat(a.score)).slice(0,5));
+  // Update sidebar badge with real count
+  const highRisk = data.filter(a => parseFloat(a.score) >= 75).length;
+  setFraudBadge(highRisk);
+  document.getElementById('sidebar').innerHTML = sidebar('fraud');
+
+  if (!window._chartFailed) {
+    drawDist(data);
+  } else {
+    document.getElementById('distChart').parentElement.innerHTML = `<div class="empty"><div class="empty-icon">📊</div>Chart unavailable (offline)</div>`;
+  }
+  renderTop(data.sort((a, b) => parseFloat(b.score) - parseFloat(a.score)).slice(0, 5));
   renderTable(data);
 }
 

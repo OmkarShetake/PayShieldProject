@@ -42,12 +42,14 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
             try {
                 Claims claims = parseToken(token);
                 String username = claims.getSubject();
-                String role = claims.get("role", String.class);
+                String role     = claims.get("role", String.class);
+                String userId   = claims.get("userId", String.class);
 
                 // Forward user info to downstream services
                 ServerHttpRequest mutatedRequest = request.mutate()
-                        .header("X-User-Email", username)
-                        .header("X-User-Role", role != null ? role : "")
+                        .header("X-User-Email",   username)
+                        .header("X-User-Role",    role != null ? role : "")
+                        .header("X-Merchant-Id",  userId != null ? userId : "")
                         .build();
 
                 log.debug("JWT validated for user: {} role: {}", username, role);
