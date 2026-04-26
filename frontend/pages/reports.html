@@ -14,11 +14,13 @@
     <div class="topbar">
       <div><div class="topbar-title">Reports & Analytics</div><div class="topbar-sub">PayShield / Business Intelligence</div></div>
       <div class="topbar-right">
+        <span class="last-updated" id="upd-time"></span>
         <select id="period" onchange="load()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;outline:none;font-family:var(--font)">
           <option value="7">Last 7 days</option>
           <option value="30" selected>Last 30 days</option>
           <option value="90">Last 90 days</option>
         </select>
+        <div id="ring-wrap"></div>
       </div>
     </div>
     <div class="content">
@@ -70,12 +72,13 @@ async function load(){
     ? `/api/reports/dashboard?merchantId=${mid}&days=${days}`
     : `/api/reports/dashboard?days=${days}`;
   let d = await apiFetch(endpoint) || mockDashboard();
-  document.getElementById('r-rev').textContent=fmt(d.totalVolume);
-  document.getElementById('r-rev-sub').textContent=`Avg ${fmt(d.avgTransactionValue||0)} per txn`;
-  document.getElementById('r-txn').textContent=fmtNum(d.totalTransactions);
-  document.getElementById('r-txn-sub').textContent=`${fmtNum(d.successfulTransactions)} successful`;
-  document.getElementById('r-rate').textContent=Number(d.successRate).toFixed(1)+'%';
-  document.getElementById('r-saved').textContent=fmt((d.fraudFlagged||0)*42000);
+  document.getElementById('r-rev').textContent     = fmt(d.totalVolume);
+  document.getElementById('r-rev-sub').textContent = `Avg ${fmt(d.avgTransactionValue||0)} per txn`;
+  document.getElementById('r-txn').textContent     = fmtNum(d.totalTransactions);
+  document.getElementById('r-txn-sub').textContent = `${fmtNum(d.successfulTransactions)} successful`;
+  document.getElementById('r-rate').textContent    = Number(d.successRate).toFixed(1)+'%';
+  document.getElementById('r-saved').textContent   = fmt((d.fraudFlagged||0)*42000);
+  setLastUpdated('upd-time');
   const v=d.dailyVolumes||[];
   mkLine('revChart',v.map(x=>x.date.slice(5)),v.map(x=>x.volume),'#22c55e');
   mkBar2('sfChart',v.map(x=>x.date.slice(5)),v.map(x=>Math.floor(x.transactionCount*.94)),v.map(x=>Math.floor(x.transactionCount*.06)));
@@ -126,6 +129,7 @@ function renderMeth(){
 }
 
 load();
+ringTimer = createRefreshRing('ring-wrap', 60, load);
 </script>
 </body>
 </html>

@@ -206,3 +206,87 @@ const chartDefaults = {
     y: { grid: { color: 'rgba(35,38,58,.6)' }, ticks: { color: '#5c6380', font: { size: 11 } } }
   }
 };
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function ensureToastContainer() {
+  if (!document.getElementById('toast-container')) {
+    const d = document.createElement('div');
+    d.id = 'toast-container';
+    document.body.appendChild(d);
+  }
+}
+
+function toast(msg, type = 'info', duration = 3500) {
+  ensureToastContainer();
+  const icons = { success: '✓', error: '✕', info: 'ℹ', warn: '⚠' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span style="font-size:14px;flex-shrink:0">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut .2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+  }, duration);
+}
+
+// ── Countdown refresh ring ────────────────────────────────────────────────────
+function createRefreshRing(containerId, intervalSec, onTick) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const r = 11, circ = 2 * Math.PI * r;
+  container.innerHTML = `
+    <div class="refresh-ring" title="Auto-refreshes every ${intervalSec}s — click to refresh now" onclick="onTick && onTick()">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <circle cx="14" cy="14" r="${r}"/>
+        <circle class="progress" id="ring-progress" cx="14" cy="14" r="${r}"
+          stroke-dasharray="${circ}" stroke-dashoffset="0"/>
+      </svg>
+      <div class="icon">↻</div>
+    </div>`;
+  container.querySelector('.refresh-ring').onclick = onTick;
+
+  let elapsed = 0;
+  return setInterval(() => {
+    elapsed++;
+    const pct = elapsed / intervalSec;
+    const offset = circ * (1 - pct);
+    const prog = document.getElementById('ring-progress');
+    if (prog) prog.style.strokeDashoffset = offset;
+    if (elapsed >= intervalSec) {
+      elapsed = 0;
+      if (onTick) onTick();
+    }
+  }, 1000);
+}
+
+// ── Last updated ──────────────────────────────────────────────────────────────
+function setLastUpdated(id) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── Trend helper ──────────────────────────────────────────────────────────────
+function trendBadge(current, previous) {
+  if (!previous || previous === 0) return '';
+  const pct = ((current - previous) / previous * 100).toFixed(1);
+  const up = current >= previous;
+  return `<span class="trend ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
+}
+
+// ── Mock data indicator ───────────────────────────────────────────────────────
+function showMockBanner(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  // Only show once per page
+  if (el.querySelector('.mock-banner')) return;
+  const banner = document.createElement('div');
+  banner.className = 'mock-banner';
+  banner.innerHTML = `<span class="mock-banner-icon">⚠</span>
+    <span>Showing <strong>demo data</strong> — backend API unavailable or no data yet.</span>`;
+  el.insertBefore(banner, el.firstChild);
+}
+
+function hideMockBanner(containerId) {
+  const el = document.getElementById(containerId);
+  if (el) el.querySelector('.mock-banner')?.remove();
+}

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +35,7 @@ public class FraudController {
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
     @PostMapping("/score")
-    public ResponseEntity<FraudCheckResult> score(@RequestBody FraudCheckRequest request) {
+    public ResponseEntity<FraudCheckResult> score(@Valid @RequestBody FraudCheckRequest request) {
         return ResponseEntity.ok(scoringEngine.evaluateTransaction(request));
     }
 

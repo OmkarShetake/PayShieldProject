@@ -87,31 +87,23 @@ public class ReconciliationService {
     private List<ReconRecord> performMatching(List<Settlement> settlements, ReconRun run) {
         List<ReconRecord> records = new ArrayList<>();
 
-        // For each settlement, try to find matching transaction
         for (Settlement settlement : settlements) {
-            // In production: look up transaction in payshield-payment DB via REST or shared read replica
-            // Here we simulate: if bankRef starts with "MATCH" -> found, else -> missing
-            boolean txnFound = !settlement.getBankRef().startsWith("MISS");
+            /*
+             * Matching logic:
+             * In production this would call payshield-payment via REST or a read replica
+             * to look up the transaction by bankRef or amount+date.
+             *
+             * Here we simulate realistic outcomes:
+             *  - 94% of settlements match exactly
+             *  - 4% have a small amount delta (fee deduction, rounding)
+             *  - 2% are missing (no corresponding transaction found)
+             *
+             * The outcome is deterministic per bankRef so repeated runs are consistent.
+             */
+            int hash = Math.abs(settlement.getBankRef().hashCode()) % 100;
 
-            if (txnFound) {
-                // Simulate transaction amount (would be fetched from payment DB)
-                BigDecimal txnAmount = settlement.getAmount();
-                BigDecimal delta = txnAmount.subtract(settlement.getAmount()).abs();
-                ReconStatus status = delta.compareTo(amountTolerance) <= 0
-                        ? ReconStatus.MATCHED : ReconStatus.MISMATCH;
-
-                records.add(ReconRecord.builder()
-                        .merchantId(run.getMerchantId())
-                        .settlement(settlement)
-                        .txnAmount(txnAmount)
-                        .settlementAmount(settlement.getAmount())
-                        .delta(delta)
-                        .status(status)
-                        .mismatchReason(status == ReconStatus.MISMATCH
-                                ? "Amount delta of " + delta + " exceeds tolerance" : null)
-                        .runId(run.getId())
-                        .build());
-            } else {
+            if (hash < 2) {
+                // MISSING — no transaction found for this settlement
                 records.add(ReconRecord.builder()
                         .merchantId(run.getMerchantId())
                         .settlement(settlement)
@@ -119,6 +111,35 @@ public class ReconciliationService {
                         .delta(settlement.getAmount())
                         .status(ReconStatus.MISSING)
                         .mismatchReason("No matching transaction found in platform records")
+                        .runId(run.getId())
+                        .build());
+
+            } else if (hash < 6) {
+                // MISMATCH — small delta (e.g. payment gateway fee deducted)
+                BigDecimal fee = BigDecimal.valueOf(hash % 3 == 0 ? 18.0 : 9.0); // simulate GST/fee
+                BigDecimal txnAmount = settlement.getAmount().add(fee);
+                BigDecimal delta = txnAmount.subtract(settlement.getAmount()).abs();
+
+                records.add(ReconRecord.builder()
+                        .merchantId(run.getMerchantId())
+                        .settlement(settlement)
+                        .txnAmount(txnAmount)
+                        .settlementAmount(settlement.getAmount())
+                        .delta(delta)
+                        .status(ReconStatus.MISMATCH)
+                        .mismatchReason("Amount delta ₹" + delta + " — possible gateway fee deduction")
+                        .runId(run.getId())
+                        .build());
+
+            } else {
+                // MATCHED — amounts agree within tolerance
+                records.add(ReconRecord.builder()
+                        .merchantId(run.getMerchantId())
+                        .settlement(settlement)
+                        .txnAmount(settlement.getAmount())
+                        .settlementAmount(settlement.getAmount())
+                        .delta(BigDecimal.ZERO)
+                        .status(ReconStatus.MATCHED)
                         .runId(run.getId())
                         .build());
             }

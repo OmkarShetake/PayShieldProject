@@ -18,7 +18,10 @@
   <main class="main">
     <div class="topbar">
       <div><div class="topbar-title">Reconciliation</div><div class="topbar-sub">PayShield / Settlement Matching</div></div>
-      <div class="topbar-right"><div class="live-badge"><div class="live-dot"></div>Live</div></div>
+      <div class="topbar-right">
+        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <button class="btn ghost sm" onclick="clearHistory()" title="Clear run history">🗑 Clear</button>
+      </div>
     </div>
     <div class="content">
       <div class="kpi-grid mb2">
@@ -86,13 +89,27 @@ async function run(){
   runs.unshift(r);
   localStorage.setItem('ps_recon_runs', JSON.stringify(runs.slice(0, 50)));
   kpis(); renderTable();
-  const el=document.getElementById('run-result');
-  el.className='result-row';
-  el.innerHTML=`<div><div class="result-num" style="color:var(--green)">${r.matched}</div><div class="result-lbl">Matched</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--amber)">${r.mismatched}</div><div class="result-lbl">Mismatch</div></div><div style="width:1px;height:32px;background:var(--border)"></div><div><div class="result-num" style="color:var(--text)">${r.matchRate}%</div><div class="result-lbl">Match Rate</div></div><div style="margin-left:auto;font-size:13px;color:var(--text2)">✓ Run complete for ${from} → ${to}</div>`;
-  btn.disabled=false; btn.textContent='▶ Run Now';
+  const el = document.getElementById('run-result');
+  el.className = 'result-row';
+  el.innerHTML = `
+    <div><div class="result-num" style="color:var(--green)">${r.matched}</div><div class="result-lbl">Matched</div></div>
+    <div style="width:1px;height:32px;background:var(--border)"></div>
+    <div><div class="result-num" style="color:var(--amber)">${r.mismatched}</div><div class="result-lbl">Mismatch</div></div>
+    <div style="width:1px;height:32px;background:var(--border)"></div>
+    <div><div class="result-num" style="color:var(--text)">${r.matchRate}%</div><div class="result-lbl">Match Rate</div></div>
+    <div style="margin-left:auto;font-size:13px;color:var(--text2)">✓ Run complete · ${from} → ${to}</div>`;
+  toast(`Reconciliation complete — ${r.matchRate}% match rate`, parseFloat(r.matchRate) >= 95 ? 'success' : 'warn');
+  btn.disabled = false; btn.textContent = '▶ Run Now';
 }
 
-function renderTable(){
+function clearHistory() {
+  if (!runs.length) return;
+  runs = [];
+  localStorage.removeItem('ps_recon_runs');
+  kpis(); renderTable();
+  toast('Run history cleared', 'info', 2000);
+}
+
   if(!runs.length) return;
   document.getElementById('recon-tbody').innerHTML=runs.map(r=>`<tr>
     <td><span class="mono" style="font-size:11px;color:var(--text2)">${r.id}</span></td>

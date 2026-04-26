@@ -6,8 +6,8 @@ services:
     image: postgres:15-alpine
     container_name: payshield-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -42,6 +42,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
     restart: unless-stopped
 
   # FIX 2: Kafka — depends_on zookeeper with service_started (no healthcheck on zookeeper)
@@ -61,6 +64,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
     healthcheck:
       test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
       interval: 15s
@@ -94,10 +99,10 @@ services:
       - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_DATA_REDIS_HOST: redis
-      JWT_SECRET: payshield-super-secret-jwt-key-change-in-production-must-be-256-bits
+      JWT_SECRET: ${JWT_SECRET:-payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,11 +124,11 @@ services:
       - "8082:8082"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET: payshield-super-secret-jwt-key-change-in-production-must-be-256-bits
+      JWT_SECRET: ${JWT_SECRET:-payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
       FRAUD_SERVICE_URL: http://payshield-fraud:8083
     depends_on:
       postgres:
@@ -147,8 +152,8 @@ services:
       - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fraud_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       AI_SCORER_URL: http://payshield-ai-svc:9000
@@ -176,8 +181,8 @@ services:
       - "8084:8084"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/recon_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       postgres:
@@ -199,8 +204,8 @@ services:
       - "8085:8085"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
@@ -226,8 +231,8 @@ services:
       - "8086:8086"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reporting_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
@@ -258,13 +263,17 @@ services:
       RECON_SERVICE_URL: http://payshield-recon-svc:8084
       NOTIFICATION_SERVICE_URL: http://payshield-notif-svc:8085
       REPORTING_SERVICE_URL: http://payshield-report-svc:8086
-      JWT_SECRET: payshield-super-secret-jwt-key-change-in-production-must-be-256-bits
+      JWT_SECRET: ${JWT_SECRET:-payshield-super-secret-jwt-key-change-in-production-must-be-256-bits}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      SPRING_DATA_REDIS_HOST: redis
     depends_on:
       payshield-auth:
         condition: service_healthy
       payshield-payment:
         condition: service_healthy
       payshield-fraud:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: on-failure
     healthcheck:
@@ -288,3 +297,6 @@ services:
 
 volumes:
   postgres_data:
+  kafka_data:
+  zookeeper_data:
+  zookeeper_log:
